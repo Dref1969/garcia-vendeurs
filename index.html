@@ -298,12 +298,15 @@ function prochainPalier(marge) {
   return null;
 }
 
-// Commission nette = commission brute × (1 - items_ratés × 0.20)
+
 // items_atteints = nb items à 100%+
 function commNette(commBr, itemsAtteints, totalItems) {
+  // 5/5 = 100% de la commission
+  // chaque item non atteint = -20%
+  // ex: 3/5 atteints = 2 ratés = -40% = 60% de la commission
   const ratés = Math.max(0, totalItems - itemsAtteints);
-  const malus = Math.min(ratés * 0.20, 1.0);
-  return { nette: Math.round(commBr * (1 - malus)), malus: Math.round(malus * 100), ratés };
+  const pctRetenu = Math.max(0, 100 - ratés * 20);
+  return { nette: Math.round(commBr * pctRetenu / 100), malus: 100 - pctRetenu, ratés, pctRetenu };
 }
 
 /* ════════════════════════════════════════
@@ -595,12 +598,12 @@ function renderDash(auth, donnees, items, config) {
         <div class="cn-lbl">Commission nette projetée</div>
         <div class="cn-main">
           <div class="cn-val">${fmt(commNetteP)}<sup> €</sup></div>
-          ${malusPct > 0 ? `<span class="cn-malus">-${malusPct}% malus</span>` : '<span class="cn-malus" style="background:rgba(0,166,81,.2);color:#86EFAC">0% malus</span>'}
+          ${malusPct > 0 ? `<span class="cn-malus">-${malusPct}% · ${100-malusPct}% retenu</span>` : '<span class="cn-malus" style="background:rgba(0,166,81,.2);color:#86EFAC">✓ 100% retenu</span>'}
         </div>
         <div class="cn-sub" style="margin-top:8px;font-size:11px">
           ${malusExplain}
         </div>
-        <div class="cn-sub" style="margin-top:4px">Commission brute ${fmt(commBrP)} € × ${100-malusPct}% = <strong style="color:rgba(255,255,255,.7)">${fmt(commNetteP)} €</strong></div>
+        <div class="cn-sub" style="margin-top:4px">${fmt(commBrP)} € × ${100-malusPct}% (${5-ratés}/5 items) = <strong style="color:rgba(255,255,255,.7)">${fmt(commNetteP)} €</strong></div>
       </div>
     </div>
 
