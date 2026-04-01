@@ -3,481 +3,389 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Résultats · Groupe Garcia</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Mes Résultats · SFR</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
-  --red:#C0392B;--red2:#E74C3C;--red-bg:#FDECEA;
-  --gold:#D4A843;--gold-bg:#FDF6E3;--gold-dark:#A07830;
-  --green:#27AE60;--green-bg:#E8F8F0;--green-dark:#1E8449;
-  --orange:#E67E22;--orange-bg:#FEF3E2;
-  --dark:#0F0F1A;--dark2:#1A1A2E;--dark3:#232340;
+  --sfr:#E2001A;--sfr2:#FF1A2E;--sfr-dark:#A8001A;
+  --pro:#1A1A2E;--pro2:#252545;--pro3:#303060;
+  --white:#FFFFFF;--off:#F5F5F5;--border:#E8E8E8;
   --text:#1A1A2E;--muted:#666;--light:#999;
-  --bg:#F7F5F1;--card:#FFFFFF;--border:#E4E0D8;
-  --safe:env(safe-area-inset-bottom,0px);
+  --green:#00A651;--green-bg:#E8F8F0;
+  --orange:#F5A623;--orange-bg:#FFF4E0;
+  --red:#E2001A;--red-bg:#FFF0F0;
+  --safe-b:env(safe-area-inset-bottom,16px);
 }
-html,body{height:100%;overflow-x:hidden}
-body{font-family:'Syne',sans-serif;background:var(--bg);color:var(--text);overscroll-behavior:none}
+html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;color:var(--text);overflow-x:hidden}
 
-/* ─── SCREENS ─── */
+/* SCREENS */
 .screen{display:none;min-height:100dvh;flex-direction:column}
 .screen.active{display:flex}
 
-/* ─── LOGIN ─── */
-#login{align-items:center;justify-content:center;padding:2rem 1.5rem}
-.login-inner{width:100%;max-width:380px}
-.brand{display:flex;align-items:center;gap:12px;margin-bottom:3rem}
-.sfr-pill{background:var(--red);color:#fff;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2.5px;padding:7px 12px;border-radius:6px;font-weight:500}
-.brand-text h1{font-size:20px;font-weight:800;color:var(--dark);line-height:1}
-.brand-text p{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:3px}
-.field{margin-bottom:1.25rem}
-.field-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
-.field input[type=text]{width:100%;padding:15px 16px;border:1.5px solid var(--border);border-radius:10px;font-size:17px;font-family:'Syne',sans-serif;background:var(--card);color:var(--text);outline:none;transition:border-color .2s}
-.field input[type=text]:focus{border-color:var(--red)}
-.pin-row{display:flex;gap:10px}
-.pin-d{flex:1;height:62px;border:1.5px solid var(--border);border-radius:10px;font-size:26px;font-weight:700;font-family:'DM Mono',monospace;text-align:center;background:var(--card);color:var(--text);outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none}
-.pin-d:focus{border-color:var(--red);border-width:2px}
-.btn-primary{width:100%;margin-top:1.75rem;padding:17px;background:var(--dark2);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer;letter-spacing:.3px;transition:background .15s,transform .1s}
-.btn-primary:active{transform:scale(.98)}
-.err{margin-top:1rem;padding:11px 14px;background:var(--red-bg);color:var(--red);border-radius:8px;font-size:12px;font-family:'DM Mono',monospace;display:none;text-align:center}
+/* ── LOGIN ── */
+#login{background:var(--pro);align-items:stretch;justify-content:flex-end}
+.login-bg{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.sfr-logo{width:72px;height:72px;background:var(--sfr);border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem}
+.sfr-logo svg{width:44px;height:44px;fill:white}
+.login-title{font-size:26px;font-weight:700;color:white;text-align:center;letter-spacing:-.5px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.4);text-align:center;margin-top:6px;letter-spacing:.3px}
+.login-card{background:white;border-radius:28px 28px 0 0;padding:2rem 1.5rem calc(1.5rem + var(--safe-b))}
+.field-lbl{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+.field-inp{width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-size:17px;font-family:inherit;background:var(--off);color:var(--text);outline:none;transition:border-color .2s;margin-bottom:1.25rem}
+.field-inp:focus{border-color:var(--sfr);background:white}
+.pin-row{display:flex;gap:10px;margin-bottom:1.5rem}
+.pin-d{flex:1;height:60px;border:1.5px solid var(--border);border-radius:12px;font-size:28px;font-weight:700;text-align:center;background:var(--off);color:var(--text);outline:none;transition:all .2s;-webkit-appearance:none}
+.pin-d:focus{border-color:var(--sfr);border-width:2px;background:white}
+.btn-login{width:100%;padding:17px;background:var(--sfr);color:white;border:none;border-radius:14px;font-size:16px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:.2px;transition:background .15s}
+.btn-login:active{background:var(--sfr-dark)}
+.err{margin-top:1rem;padding:12px 16px;background:var(--red-bg);color:var(--sfr);border-radius:10px;font-size:13px;text-align:center;display:none;font-weight:500}
 
-/* ─── HEADER ─── */
-.topbar{background:var(--dark2);padding:16px 1.25rem 14px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:10}
-.topbar-left h2{font-size:17px;font-weight:800;color:#fff;letter-spacing:-.2px}
-.topbar-left p{font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.45);margin-top:2px;letter-spacing:.5px}
-.logout{background:rgba(255,255,255,.1);border:none;color:rgba(255,255,255,.7);padding:6px 12px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer}
+/* ── HEADER ── */
+.header{background:var(--sfr);padding:52px 1.25rem 1rem;position:sticky;top:0;z-index:10}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start}
+.h-greeting{font-size:22px;font-weight:700;color:white;letter-spacing:-.3px}
+.h-info{font-size:12px;color:rgba(255,255,255,.65);margin-top:3px;font-weight:500}
+.h-logout{background:rgba(255,255,255,.15);border:none;color:white;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer}
+.h-date-pill{display:inline-block;background:rgba(255,255,255,.15);border-radius:20px;padding:4px 12px;font-size:11px;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.5px;margin-top:10px}
 
-/* ─── SCROLL BODY ─── */
-.dash-body{flex:1;overflow-y:auto;padding:1.25rem 1.25rem calc(1.5rem + var(--safe))}
+/* ── SCROLL BODY ── */
+.body{flex:1;overflow-y:auto;padding:.75rem .75rem calc(1rem + var(--safe-b))}
 
-/* ─── COMMISSION HERO ─── */
-.comm-hero{background:var(--dark2);border-radius:16px;padding:1.5rem;margin-bottom:1rem;position:relative;overflow:hidden}
-.comm-hero::after{content:'';position:absolute;bottom:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(212,168,67,.08)}
-.ch-label{font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;text-transform:uppercase}
-.ch-amount{font-size:48px;font-weight:800;color:#fff;margin-top:4px;font-family:'DM Mono',monospace;letter-spacing:-2px;line-height:1}
-.ch-amount sup{font-size:20px;opacity:.5;font-weight:400;letter-spacing:0}
-.ch-tags{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.tag{font-size:10px;font-family:'DM Mono',monospace;font-weight:500;padding:5px 10px;border-radius:20px}
-.tag-track{background:rgba(39,174,96,.2);color:#4EC07F}
-.tag-warn{background:rgba(230,126,34,.2);color:#E67E22}
-.tag-bad{background:rgba(231,76,60,.2);color:#E74C3C}
-.tag-great{background:rgba(212,168,67,.25);color:var(--gold)}
-.tag-neutral{background:rgba(255,255,255,.08);color:rgba(255,255,255,.45)}
+/* ── CARDS ── */
+.card{background:white;border-radius:16px;margin-bottom:.75rem;overflow:hidden;border:1px solid var(--border)}
 
-/* ─── SECTION TITLE ─── */
-.sec-title{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin:1.25rem 0 .6rem;font-family:'DM Mono',monospace}
+/* ── MARGE HERO ── */
+.marge-hero{background:var(--pro);border-radius:16px;padding:1.25rem;margin-bottom:.75rem}
+.marge-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.marge-block{background:var(--pro2);border-radius:12px;padding:1rem}
+.mb-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:6px}
+.mb-val{font-size:28px;font-weight:800;color:white;letter-spacing:-1px;line-height:1}
+.mb-val sup{font-size:14px;font-weight:400;opacity:.6}
+.mb-delta{font-size:11px;margin-top:6px;font-weight:600}
+.delta-up{color:#4EC07F}
+.delta-down{color:#FF6B6B}
+.delta-flat{color:rgba(255,255,255,.4)}
 
-/* ─── ITEM CARDS ─── */
-.item-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.75rem}
-.ic-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
-.ic-name{font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
-.ic-num{width:22px;height:22px;border-radius:50%;background:var(--dark2);color:#fff;font-size:10px;font-family:'DM Mono',monospace;display:flex;align-items:center;justify-content:center;font-weight:500;flex-shrink:0}
-.ic-pct{font-size:15px;font-weight:700;font-family:'DM Mono',monospace}
-.pct-ok{color:var(--green-dark)}
-.pct-warn{color:var(--orange)}
-.pct-bad{color:var(--red)}
-.pct-great{color:var(--gold-dark)}
-.prog-bg{height:5px;background:#EEEBE5;border-radius:10px;overflow:hidden;margin-bottom:.5rem}
-.prog-fill{height:100%;border-radius:10px;transition:width .8s ease}
-.fill-green{background:var(--green)}
-.fill-warn{background:var(--orange)}
-.fill-bad{background:var(--red)}
-.fill-great{background:var(--gold)}
-.ic-sub{display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
-.ic-sub b{color:var(--text);font-weight:500}
+/* ── SECTION TITLE ── */
+.sec{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:.75rem .25rem .4rem}
 
-/* ─── DETAIL MARGE ─── */
-.detail-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:.75rem;overflow:hidden}
-.detail-row{display:flex;justify-content:space-between;align-items:center;padding:11px 1.1rem;border-bottom:1px solid var(--border)}
-.detail-row:last-child{border-bottom:none}
-.dr-name{font-size:13px;color:var(--text)}
-.dr-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--text)}
-.dr-total{background:var(--dark2);color:#fff}
-.dr-total .dr-name{color:rgba(255,255,255,.7);font-size:12px}
-.dr-total .dr-val{color:#fff;font-size:15px}
-.dr-bonus{background:var(--gold-bg)}
-.dr-bonus .dr-name{color:var(--gold-dark);font-size:12px}
-.dr-bonus .dr-val{color:var(--gold-dark);font-size:14px}
+/* ── ITEMS GRID ── */
+.items-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem}
+.item-card{background:white;border:1px solid var(--border);border-radius:14px;padding:.9rem}
+.ic-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.ic-icon{font-size:18px;line-height:1}
+.ic-pct{font-size:15px;font-weight:800;padding:3px 8px;border-radius:8px}
+.pct-great{background:#FFF4CC;color:#B8860B}
+.pct-ok{background:#E8F8F0;color:#006633}
+.pct-warn{background:#FFF4E0;color:#CC6600}
+.pct-bad{background:#FFF0F0;color:#CC0011}
+.ic-label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.3px;margin-bottom:.4rem}
+.ic-vals{display:flex;flex-direction:column;gap:3px}
+.iv-row{display:flex;justify-content:space-between;align-items:center}
+.iv-lbl{font-size:10px;color:var(--light)}
+.iv-val{font-size:13px;font-weight:700;color:var(--text)}
+.iv-proj{font-size:11px;font-weight:600;color:var(--sfr)}
+.prog-bg{height:4px;background:var(--border);border-radius:10px;margin:.5rem 0 .3rem;overflow:hidden}
+.prog-fill{height:100%;border-radius:10px;transition:width .8s}
+.fill-great{background:#F5A623}
+.fill-ok{background:#00A651}
+.fill-warn{background:#F5A623}
+.fill-bad{background:#E2001A}
 
-/* ─── PRÉSENCE ─── */
-.presence-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.75rem}
-.pres-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
-.pres-label{font-size:13px;font-weight:600}
-.pres-val{font-size:22px;font-weight:700;font-family:'DM Mono',monospace}
-.pres-meta{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+/* ── DETAIL COMMISSIONS ── */
+.comm-row{display:flex;justify-content:space-between;align-items:center;padding:11px 1rem;border-bottom:1px solid var(--border)}
+.comm-row:last-child{border-bottom:none}
+.cr-name{font-size:13px;color:var(--text)}
+.cr-val{font-size:13px;font-weight:700;color:var(--text)}
+.comm-total{background:var(--pro);padding:12px 1rem}
+.ct-name{font-size:12px;color:rgba(255,255,255,.6)}
+.ct-val{font-size:18px;font-weight:800;color:white}
+.comm-proj-row{background:var(--red-bg);padding:11px 1rem;border-top:1px solid #FFD0D0}
+.cpr-name{font-size:12px;color:var(--sfr);font-weight:600}
+.cpr-val{font-size:16px;font-weight:800;color:var(--sfr)}
 
-/* ─── REFRESH ─── */
-.refresh-bar{text-align:center;padding:.75rem 0;font-size:11px;font-family:'DM Mono',monospace;color:var(--light);display:flex;align-items:center;justify-content:center;gap:6px}
-.dot-live{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+/* ── STATUT ── */
+.statut-banner{border-radius:14px;padding:12px 1rem;margin-bottom:.75rem;display:flex;align-items:center;gap:10px}
+.sb-great{background:linear-gradient(135deg,#006633,#00A651);color:white}
+.sb-ok{background:linear-gradient(135deg,#004D99,#0066CC);color:white}
+.sb-warn{background:linear-gradient(135deg,#996600,#CC8800);color:white}
+.sb-bad{background:linear-gradient(135deg,#990011,#CC0011);color:white}
+.sb-icon{font-size:24px;flex-shrink:0}
+.sb-title{font-size:15px;font-weight:800;letter-spacing:-.2px}
+.sb-sub{font-size:11px;opacity:.8;margin-top:2px}
 
-/* ─── INPUT SIMULATION ─── */
-.sim-card{background:var(--gold-bg);border:1px solid #E8D8A0;border-radius:12px;padding:1rem 1.1rem;margin-bottom:.75rem}
-.sim-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Mono',monospace;color:var(--gold-dark);margin-bottom:.75rem}
-.sim-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.sim-field{display:flex;flex-direction:column;gap:4px}
-.sim-field label{font-size:10px;font-family:'DM Mono',monospace;color:var(--gold-dark);letter-spacing:.5px}
-.sim-field input{padding:9px 10px;border:1px solid #D4B870;border-radius:7px;font-size:14px;font-family:'DM Mono',monospace;font-weight:500;background:#fff;color:var(--text);outline:none;width:100%;-webkit-appearance:none}
-.sim-field input:focus{border-color:var(--gold)}
-.btn-sim{width:100%;margin-top:.75rem;padding:12px;background:var(--dark2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Syne',sans-serif;cursor:pointer}
+/* ── PRÉSENCE ── */
+.pres-card{background:white;border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center}
+.pc-left{font-size:13px;color:var(--muted)}
+.pc-left b{display:block;font-size:15px;color:var(--text);margin-bottom:2px}
+.pc-right{text-align:right}
+.pc-jours{font-size:28px;font-weight:800;color:var(--pro);line-height:1}
+.pc-sub{font-size:11px;color:var(--muted)}
+.pc-bar{height:5px;background:var(--border);border-radius:10px;margin-top:.75rem;overflow:hidden}
+.pc-fill{height:100%;background:var(--sfr);border-radius:10px}
+
+/* ── REFRESH ── */
+.refresh{text-align:center;padding:1rem;font-size:11px;color:var(--light);display:flex;align-items:center;justify-content:center;gap:6px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ LOGIN ═══════════════════════ -->
+<!-- ════════════════ LOGIN ════════════════ -->
 <div id="login" class="screen active">
-  <div class="login-inner">
-    <div class="brand">
-      <div class="sfr-pill">SFR</div>
-      <div class="brand-text">
-        <h1>Mes résultats</h1>
-        <p>Groupe Garcia · Avril 2026</p>
-      </div>
+  <div class="login-bg">
+    <div class="sfr-logo">
+      <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+        <text x="4" y="46" font-size="46" font-weight="900" fill="white">SFR</text>
+      </svg>
     </div>
-    <div class="field">
-      <span class="field-label">Prénom</span>
-      <input type="text" id="inp-prenom" placeholder="Votre prénom" autocomplete="off" autocapitalize="words" />
+    <div class="login-title">Mes Résultats</div>
+    <div class="login-sub">Groupe Garcia · Avril 2026</div>
+  </div>
+  <div class="login-card">
+    <span class="field-lbl">Prénom</span>
+    <input class="field-inp" type="text" id="inp-prenom" placeholder="Ton prénom" autocomplete="off" autocapitalize="words" />
+    <span class="field-lbl">Code d'accès</span>
+    <div class="pin-row">
+      <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
+      <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
+      <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
+      <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
     </div>
-    <div class="field">
-      <span class="field-label">Code d'accès (4 chiffres)</span>
-      <div class="pin-row" id="pin-row">
-        <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
-        <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
-        <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
-        <input class="pin-d" maxlength="1" inputmode="numeric" pattern="[0-9]*" />
-      </div>
-    </div>
-    <div class="err" id="err-msg">❌ Prénom ou code incorrect</div>
-    <button class="btn-primary" id="btn-login">Accéder à mes résultats →</button>
+    <button class="btn-login" onclick="tryLogin()">Accéder →</button>
+    <div class="err" id="err">Prénom ou code incorrect</div>
   </div>
 </div>
 
-<!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
+<!-- ════════════════ DASHBOARD ════════════════ -->
 <div id="dash" class="screen">
-  <div class="topbar">
-    <div class="topbar-left">
-      <h2 id="th-name">—</h2>
-      <p id="th-boutique">—</p>
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="h-greeting" id="h-name">—</div>
+        <div class="h-info" id="h-boutique">—</div>
+      </div>
+      <button class="h-logout" onclick="doLogout()">Déco</button>
     </div>
-    <button class="logout" id="btn-logout">Déco</button>
+    <div class="h-date-pill">AVRIL 2026 · J<span id="h-jour">1</span>/22</div>
   </div>
-  <div class="dash-body" id="dash-body">
-    <!-- dynamic content injected here -->
-  </div>
+  <div class="body" id="dash-body"></div>
 </div>
 
 <script>
-/* ═══════════════════════════════════════════
-   DATA — vendeurs + présence + objectifs proratisés
-   ═══════════════════════════════════════════ */
-const JOURS_MOIS = 22; // jours ouvrables avril 2026
+/* ═══════════ DONNÉES 3GWIN — 01/04/2026 ═══════════
+   Mapping depuis SKILL.md + données scraped
+   ═══════════════════════════════════════════════════ */
+const JOUR_EN_COURS = 1;
+const JOURS_MOIS = 22;
+
+// Objectifs base mois complet (22j)
+const OBJ = { mob:20, g3a:0.5, cyber:15, assuTx:40, accMt:30 };
 
 const VENDEURS = {
-  // PRENOM_lower : { pin, boutique, jours, real: {mob, alba, cyber, assuTx, accMt} }
-  // real = résultats actuels (à 0 au départ, mis à jour via simulation)
-  'anais':   { pin:'1001', boutique:'ALR · ANGERS',      jours:19, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'axel':    { pin:'1002', boutique:'ALR · ANGERS',      jours:22, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'chloe':   { pin:'1003', boutique:'CLR · CHÂTEAUDUN',  jours:11, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'emilie':  { pin:'1004', boutique:'TLR · AMBOISE',     jours:20, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'emmy':    { pin:'1005', boutique:'RLR · ROMORANTIN',  jours:6,  real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'hassene': { pin:'1006', boutique:'VLR · CHOLET',      jours:22, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'ilian':   { pin:'1007', boutique:'ALR · ANGERS',      jours:13, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'julie':   { pin:'1008', boutique:'TLR · AMBOISE',     jours:10, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'lucas':   { pin:'1009', boutique:'ALR · ANGERS',      jours:21, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'mehdy':   { pin:'1010', boutique:'VLR · CHOLET',      jours:22, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'nathan':  { pin:'1011', boutique:'CLR · CHÂTEAUDUN',  jours:13, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'pauline': { pin:'1012', boutique:'TLR · AMBOISE',     jours:17, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'rachel':  { pin:'1013', boutique:'RLR · ROMORANTIN',  jours:9,  real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
-  'will':    { pin:'1014', boutique:'VLR · CHOLET',      jours:22, real:{mob:0,alba:0,cyber:0,assuTx:0,accMt:0} },
+  'anais':   { pin:'7342', boutique:'CHOLET',        jours:19, mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:0,     marge:0      },
+  'axel':    { pin:'5819', boutique:'ALR · ANGERS',  jours:22, mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:0,     marge:0      },
+  'chloe':   { pin:'2967', boutique:'CHOLET',        jours:11, mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:1.36,  marge:161.36 },
+  'emilie':  { pin:'8403', boutique:'RLR · ROMORANTIN', jours:20, mob:1, g3a:1, cyber:0, assuTx:200,  accMt:29.76, marge:208.18 },
+  'emmy':    { pin:'4651', boutique:'CHOLET',        jours:6,  mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:0,     marge:0      },
+  'hassene': { pin:'9274', boutique:'TLR · AMBOISE', jours:22, mob:3,  g3a:3,  cyber:2, assuTx:133,  accMt:55.82, marge:964.45 },
+  'ilian':   { pin:'3586', boutique:'CLR · CHÂTEAUDUN', jours:13, mob:3, g3a:1, cyber:2, assuTx:33,  accMt:26.48, marge:333.39 },
+  'julie':   { pin:'6038', boutique:'TLR · AMBOISE', jours:10, mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:0,     marge:0      },
+  'louane':  { pin:'1847', boutique:'CHOLET',        jours:21, mob:0,  g3a:0,  cyber:0, assuTx:0,    accMt:0,     marge:0      },
+  'lucas':   { pin:'7520', boutique:'CHOLET',        jours:21, mob:0,  g3a:0,  cyber:1, assuTx:0,    accMt:0,     marge:103.83 },
+  'mehdy':   { pin:'4913', boutique:'VLR · VENDÔME', jours:22, mob:1,  g3a:0,  cyber:0, assuTx:100,  accMt:5.35,  marge:306.68 },
+  'nathan':  { pin:'8261', boutique:'RLR · ROMORANTIN', jours:13, mob:0, g3a:0, cyber:0, assuTx:0,   accMt:0,     marge:0      },
+  'pauline': { pin:'3074', boutique:'ALR · ANGERS',  jours:17, mob:1,  g3a:0,  cyber:0, assuTx:0,    accMt:46.93, marge:67.76  },
+  'rachel':  { pin:'6425', boutique:'CLR · CHÂTEAUDUN', jours:9, mob:1, g3a:1,  cyber:0, assuTx:0,   accMt:28.64, marge:88.64  },
+  'will':    { pin:'9130', boutique:'RLR · ROMORANTIN', jours:22, mob:2, g3a:1, cyber:0, assuTx:0,   accMt:25.88, marge:113.42 },
 };
 
-// Objectifs base 22 jours → proratisés par présence
-const OBJ_BASE = { mob:20, alba:0.5, cyber:15, assuTx:40, accMt:30 };
-
-// Barème commission (marge) par item — adapté SFR distrib
-// Mobiles : ~30€ marge nette/unité (variable selon gamme — simplifié)
-// Alba (G3A) : ~15€/unité
-// Cyber : ~8€/unité
-// Assurance : bonus 200€ si ≥40% + bonus palier
-// Accessoires : valeur directe (marge ~40%)
-const BAREME = {
-  mob:    { base:30,  unit:'€/mob',  label:'Mobiles' },
-  alba:   { base:15,  unit:'€/mob',  label:'Garantie 3ème A.' },
-  cyber:  { base:8,   unit:'€/unit', label:'SFR Cyber' },
-  assuBonus200: 200,   // bonus 200€ si tx_assu ≥ 40%
-  accMt:  { pct:0.4,  label:'Accessoires (marge 40%)' },
-};
-
-// Bonus global payplan : atteinte 100% sur les 5 items
-const BONUS_100PCT = 300; // €
-
-function objProrata(jours) {
-  const ratio = jours / JOURS_MOIS;
-  return {
-    mob:    Math.round(OBJ_BASE.mob    * ratio * 10) / 10,
-    alba:   OBJ_BASE.alba,   // taux : pas proratisé
-    cyber:  Math.round(OBJ_BASE.cyber  * ratio * 10) / 10,
-    assuTx: OBJ_BASE.assuTx, // taux : pas proratisé
-    accMt:  OBJ_BASE.accMt,  // montant/vente : pas proratisé
-  };
-}
-
-function calcCommission(real, obj) {
-  let comm = 0;
-  const detail = {};
-  // Mobiles
-  const mobComm = real.mob * BAREME.mob.base;
-  comm += mobComm; detail.mob = mobComm;
-  // Alba (G3A) : nb alba = mob * tx_alba
-  const nbAlba = Math.round(real.mob * real.alba);
-  const albaComm = nbAlba * BAREME.alba.base;
-  comm += albaComm; detail.alba = albaComm;
-  // Cyber
-  const cyberComm = real.cyber * BAREME.cyber.base;
-  comm += cyberComm; detail.cyber = cyberComm;
-  // Assurance bonus
-  const assuBonus = real.assuTx >= 40 ? BAREME.assuBonus200 : Math.round((real.assuTx / 40) * BAREME.assuBonus200 * 0.5);
-  comm += assuBonus; detail.assuBonus = assuBonus;
-  // Accessoires marge
-  const accComm = real.mob > 0 ? Math.round(real.accMt * real.mob * BAREME.accMt.pct) : 0;
-  comm += accComm; detail.acc = accComm;
-  // Bonus 100%
-  const pcts = itemPcts(real, obj);
-  const all100 = Object.values(pcts).every(p => p >= 100);
-  const bonus = all100 ? BONUS_100PCT : 0;
-  detail.bonus = bonus; comm += bonus;
-  return { total:comm, detail };
-}
-
-function itemPcts(real, obj) {
-  return {
-    mob:    obj.mob    > 0 ? Math.min(Math.round(real.mob    / obj.mob    * 100), 200) : 0,
-    alba:   real.mob   > 0 ? Math.min(Math.round(real.alba   / obj.alba   * 100), 200) : 0,
-    cyber:  obj.cyber  > 0 ? Math.min(Math.round(real.cyber  / obj.cyber  * 100), 200) : 0,
-    assuTx: Math.min(Math.round(real.assuTx / obj.assuTx * 100), 200),
-    accMt:  real.accMt > 0 ? Math.min(Math.round(real.accMt  / obj.accMt  * 100), 200) : 0,
-  };
-}
-
-// Projection fin de mois selon rythme actuel + jours passés
-function projeter(real, jours) {
-  const joursPasses = Math.min(jours, JOURS_MOIS);
-  const ratio = joursPasses > 0 ? JOURS_MOIS / joursPasses : 1;
-  return {
-    mob:    Math.round(real.mob    * ratio),
-    alba:   real.alba,
-    cyber:  Math.round(real.cyber  * ratio),
-    assuTx: real.assuTx,
-    accMt:  real.accMt,
-  };
-}
-
-/* ═══════════════════════════════════════════
-   STATE
-   ═══════════════════════════════════════════ */
-let currentUser = null;
-let simJoursPasses = 0;
-
-/* ═══════════════════════════════════════════
-   LOGIN LOGIC
-   ═══════════════════════════════════════════ */
-const pins = Array.from(document.querySelectorAll('.pin-d'));
+/* ═══════════ AUTH ═══════════ */
+const pins = [...document.querySelectorAll('.pin-d')];
 pins.forEach((p,i) => {
   p.addEventListener('input', () => {
-    p.value = p.value.replace(/\D/g,'');
-    if (p.value && i < pins.length-1) pins[i+1].focus();
-    if (i === pins.length-1 && p.value) tryLogin();
+    p.value = p.value.replace(/\D/,'');
+    if (p.value && i < 3) pins[i+1].focus();
+    if (i === 3 && p.value) tryLogin();
   });
   p.addEventListener('keydown', e => {
     if (e.key==='Backspace' && !p.value && i>0) { pins[i-1].focus(); pins[i-1].value=''; }
   });
 });
+document.getElementById('inp-prenom').addEventListener('keydown', e => { if(e.key==='Enter') pins[0].focus(); });
 
-document.getElementById('inp-prenom').addEventListener('keydown', e => {
-  if (e.key==='Enter') pins[0].focus();
-});
-document.getElementById('btn-login').addEventListener('click', tryLogin);
+function normalize(s){ return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
+function getPin(){ return pins.map(p=>p.value).join(''); }
 
-function getPin() { return pins.map(p=>p.value).join(''); }
-
-function tryLogin() {
-  const prenom = document.getElementById('inp-prenom').value.trim().toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+function tryLogin(){
+  const prenom = normalize(document.getElementById('inp-prenom').value);
   const pin = getPin();
   const v = VENDEURS[prenom];
-  const err = document.getElementById('err-msg');
-  if (v && v.pin === pin) {
-    err.style.display = 'none';
-    currentUser = prenom;
-    renderDash();
+  const err = document.getElementById('err');
+  if(v && v.pin===pin){
+    err.style.display='none';
+    renderDash(prenom);
     document.getElementById('login').classList.remove('active');
     document.getElementById('dash').classList.add('active');
-    document.getElementById('dash').scrollTop = 0;
   } else {
-    err.style.display = 'block';
-    pins.forEach(p => p.value='');
+    err.style.display='block';
+    pins.forEach(p=>p.value='');
     pins[0].focus();
   }
 }
 
-document.getElementById('btn-logout').addEventListener('click', () => {
-  currentUser = null;
+function doLogout(){
   document.getElementById('dash').classList.remove('active');
   document.getElementById('login').classList.add('active');
-  document.getElementById('inp-prenom').value = '';
+  document.getElementById('inp-prenom').value='';
   pins.forEach(p=>p.value='');
-  simJoursPasses = 0;
-});
+}
 
-/* ═══════════════════════════════════════════
-   RENDER DASHBOARD
-   ═══════════════════════════════════════════ */
-function renderDash(simReal) {
-  const v = VENDEURS[currentUser];
-  const nom = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
-  document.getElementById('th-name').textContent = nom;
-  document.getElementById('th-boutique').textContent = v.boutique + ' · AVRIL 2026';
+/* ═══════════ CALCULS ═══════════ */
+function objProrata(jours){
+  const r = jours / JOURS_MOIS;
+  return { mob:Math.round(OBJ.mob*r*10)/10, g3a:OBJ.g3a, cyber:Math.round(OBJ.cyber*r*10)/10, assuTx:OBJ.assuTx, accMt:OBJ.accMt };
+}
 
-  const obj = objProrata(v.jours);
-  const real = simReal || v.real;
-  const joursPasses = simJoursPasses || Math.round(v.jours * 0.6); // simulation : 60% du mois écoulé
-  const proj = projeter(real, joursPasses);
-  const pcts = itemPcts(real, obj);
-  const projPcts = itemPcts(proj, obj);
-  const { total:commActuel, detail:detailActuel } = calcCommission(real, obj);
-  const { total:commProj }                         = calcCommission(proj, obj);
+function projeter(v){
+  // projection linéaire sur jours présence
+  const r = JOUR_EN_COURS > 0 ? v.jours / JOUR_EN_COURS : 1;
+  return {
+    mob:    Math.round(v.mob    * r),
+    g3a:    v.mob>0 ? Math.round(v.mob*r) > 0 ? parseFloat((v.g3a).toFixed(2)) : 0 : 0,
+    cyber:  Math.round(v.cyber  * r),
+    assuTx: v.assuTx, // taux pas projeté
+    accMt:  Math.round(v.accMt * 10) / 10,
+    marge:  Math.round(v.marge * r),
+  };
+}
 
-  const pctGlobal = Math.round(Object.values(pcts).reduce((a,b)=>a+b,0)/5);
-  const tagClass = pctGlobal>=100?'tag-great':pctGlobal>=75?'tag-track':pctGlobal>=50?'tag-warn':'tag-bad';
-  const tagLabel = pctGlobal>=100?'🏆 OBJECTIFS ATTEINTS':pctGlobal>=75?'✅ EN BONNE VOIE':pctGlobal>=50?'⚡ À ACCÉLÉRER':'🚨 DÉCROCHÉ';
+function pct(real, obj){ return obj>0 ? Math.min(Math.round(real/obj*100),200) : (real>0?100:0); }
+
+function calcComm(v, obj){
+  // Commission sur réalisé
+  const mobComm  = v.mob * 30;
+  const g3aComm  = Math.round(v.mob * v.g3a) * 15;
+  const cyberComm= v.cyber * 8;
+  const assuBonus= v.assuTx >= 40 ? 200 : v.assuTx >= 25 ? 80 : 0;
+  const accComm  = v.mob > 0 ? Math.round(v.accMt * v.mob * 0.4) : 0;
+  const base = mobComm + g3aComm + cyberComm + assuBonus + accComm;
+  return { mobComm, g3aComm, cyberComm, assuBonus, accComm, total:base };
+}
+
+/* ═══════════ RENDER ═══════════ */
+function pctClass(p){ return p>=100?'pct-great':p>=75?'pct-ok':p>=50?'pct-warn':'pct-bad'; }
+function fillClass(p){ return p>=100?'fill-great':p>=75?'fill-ok':p>=50?'fill-warn':'fill-bad'; }
+function fmt(n){ return n.toLocaleString('fr-FR'); }
+
+function renderDash(key){
+  const v = VENDEURS[key];
+  const nom = key.charAt(0).toUpperCase()+key.slice(1);
+  document.getElementById('h-name').textContent = nom;
+  document.getElementById('h-boutique').textContent = v.boutique;
+  document.getElementById('h-jour').textContent = JOUR_EN_COURS;
+
+  const obj  = objProrata(v.jours);
+  const proj = projeter(v);
+  const commR = calcComm(v, obj);
+  const commP = calcComm({...v, mob:proj.mob, g3a:v.g3a, cyber:proj.cyber, assuTx:v.assuTx, accMt:v.accMt}, obj);
+
+  // Statut global
+  const pcts5 = [pct(v.mob,obj.mob), pct(v.g3a,obj.g3a), pct(v.cyber,obj.cyber), pct(v.assuTx,obj.assuTx), pct(v.accMt,obj.accMt)];
+  const avg = Math.round(pcts5.reduce((a,b)=>a+b,0)/5);
+  let sbClass, sbIcon, sbTitle, sbSub;
+  if(avg>=100){sbClass='sb-great';sbIcon='🏆';sbTitle='Objectifs atteints !';sbSub='Continue comme ça, tu es au top'}
+  else if(avg>=75){sbClass='sb-ok';sbIcon='✅';sbTitle='En bonne voie';sbSub='Maintiens ce rythme jusqu\'à la fin du mois'}
+  else if(avg>=40){sbClass='sb-warn';sbIcon='⚡';sbTitle='À accélérer';sbSub='Il reste du temps — force !'}
+  else{sbClass='sb-bad';sbIcon='🚨';sbTitle='Décroché';sbSub='Reprends contact avec ton manager'}
 
   const items = [
-    { key:'mob',    num:1, icon:'📱', label:'Mobiles',          unit:'unités', fmt:v=>v, isRate:false, tip:`obj ${obj.mob.toFixed(1)} unités proratisé (base 20)` },
-    { key:'alba',   num:2, icon:'🛡️', label:'Garantie 3ème A.', unit:'% attach.', fmt:v=>v+'%', isRate:true, tip:`1 mobile sur 2 vendu` },
-    { key:'cyber',  num:3, icon:'🔒', label:'SFR Cyber',        unit:'unités', fmt:v=>v, isRate:false, tip:`obj ${obj.cyber.toFixed(1)} unités proratisé (base 15)` },
-    { key:'assuTx', num:4, icon:'⚡', label:"Tx d'assurance",   unit:'%', fmt:v=>v+'%', isRate:true, tip:`seuil bonus : 40%` },
-    { key:'accMt',  num:5, icon:'🎧', label:"Tx d'accessoire",  unit:'€/mob', fmt:v=>v+'€', isRate:false, tip:`obj 30€/mobile vendu` },
+    { icon:'📱', label:'Mobiles',        real:v.mob,    proj:proj.mob,   obj:obj.mob,   fmtR:v=>v+'',     fmtP:v=>v+'',     fmtO:v=>v.toFixed(0) },
+    { icon:'🛡️', label:'Garantie 3ème A.', real:Math.round(v.mob*v.g3a), proj:Math.round(proj.mob*v.g3a), obj:Math.round(obj.mob*obj.g3a), fmtR:v=>v+'', fmtP:v=>v+'', fmtO:v=>v.toFixed(0) },
+    { icon:'🔒', label:'SFR Cyber',       real:v.cyber,  proj:proj.cyber, obj:obj.cyber, fmtR:v=>v+'',     fmtP:v=>v+'',     fmtO:v=>v.toFixed(0) },
+    { icon:'⚡', label:"Tx Assurance",   real:v.assuTx, proj:v.assuTx,   obj:obj.assuTx,fmtR:v=>v+'%',   fmtP:v=>v+'%',   fmtO:v=>v+'%' },
+    { icon:'🎧', label:"Accessoires",    real:v.accMt,  proj:v.accMt,    obj:obj.accMt, fmtR:v=>v+'€',   fmtP:v=>v+'€',   fmtO:v=>v+'€' },
   ];
 
-  // Couleur selon pct
-  function pctColor(p){ return p>=100?'pct-great':p>=75?'pct-ok':p>=50?'pct-warn':'pct-bad'; }
-  function fillColor(p){ return p>=100?'fill-great':p>=75?'fill-green':p>=50?'fill-warn':'fill-bad'; }
-
-  function itemsHTML() {
-    return items.map(it => {
-      const p = pcts[it.key];
-      const pp = projPcts[it.key];
-      const rv = real[it.key];
-      const ov = obj[it.key];
-      const pv = proj[it.key];
-      const dispReal = it.key==='alba' ? (rv*100).toFixed(0)+'%' : it.key==='assuTx' ? rv+'%' : rv;
-      const dispObj  = it.key==='alba' ? '50%' : it.key==='assuTx' ? '40%' : ov.toFixed(it.isRate?0:1);
-      const dispProj = it.key==='alba' ? (pv*100).toFixed(0)+'%' : it.key==='assuTx' ? pv+'%' : pv;
-      return `
-      <div class="item-card">
-        <div class="ic-header">
-          <div class="ic-name"><div class="ic-num">${it.num}</div>${it.icon} ${it.label}</div>
-          <div class="ic-pct ${pctColor(p)}">${p}%</div>
-        </div>
-        <div class="prog-bg"><div class="prog-fill ${fillColor(p)}" style="width:${Math.min(p,100)}%"></div></div>
-        <div class="ic-sub">
-          <span>Réalisé : <b>${dispReal}</b> / obj <b>${dispObj}</b></span>
-          <span>Proj. fin mois : <b>${dispProj}</b></span>
-        </div>
-      </div>`;
-    }).join('');
-  }
-
-  function detailHTML() {
-    const rows = [
-      { label:`📱 Mobiles (${real.mob} × 30€)`, val:detailActuel.mob },
-      { label:`🛡️ Garantie 3A (${Math.round(real.mob*real.alba)} × 15€)`, val:detailActuel.alba },
-      { label:`🔒 SFR Cyber (${real.cyber} × 8€)`, val:detailActuel.cyber },
-      { label:`⚡ Bonus assurance (tx ${real.assuTx}%)`, val:detailActuel.assuBonus, cls:detailActuel.assuBonus>=200?'dr-bonus':'' },
-      { label:`🎧 Accessoires marge`, val:detailActuel.acc },
-    ];
-    let html = rows.map(r => `
-      <div class="detail-row ${r.cls||''}">
-        <span class="dr-name">${r.label}</span>
-        <span class="dr-val">${r.val} €</span>
-      </div>`).join('');
-    if (detailActuel.bonus>0) html += `<div class="detail-row dr-bonus"><span class="dr-name">🏆 Bonus 100% payplan</span><span class="dr-val">+${detailActuel.bonus} €</span></div>`;
-    html += `<div class="detail-row dr-total"><span class="dr-name">Commission actuelle</span><span class="dr-val">${commActuel} €</span></div>`;
-    return html;
-  }
-
-  // Form simulation
-  const simHTML = `
-    <div class="sim-card">
-      <div class="sim-title">📊 Saisir mes résultats actuels</div>
-      <div class="sim-grid">
-        <div class="sim-field"><label>📱 Mobiles vendus</label><input type="number" id="s-mob" min="0" max="50" value="${real.mob}" inputmode="numeric" /></div>
-        <div class="sim-field"><label>🛡️ Tx G3A (%)</label><input type="number" id="s-alba" min="0" max="100" value="${Math.round(real.alba*100)}" inputmode="numeric" /></div>
-        <div class="sim-field"><label>🔒 SFR Cyber</label><input type="number" id="s-cyber" min="0" max="50" value="${real.cyber}" inputmode="numeric" /></div>
-        <div class="sim-field"><label>⚡ Tx Assurance (%)</label><input type="number" id="s-assu" min="0" max="100" value="${real.assuTx}" inputmode="numeric" /></div>
-        <div class="sim-field"><label>🎧 Acc. moy. (€/mob)</label><input type="number" id="s-acc" min="0" max="200" value="${real.accMt}" inputmode="numeric" /></div>
-        <div class="sim-field"><label>📅 Jours travaillés</label><input type="number" id="s-jours" min="1" max="${v.jours}" value="${joursPasses}" inputmode="numeric" /></div>
-      </div>
-      <button class="btn-sim" onclick="doSim()">Calculer ma projection →</button>
-    </div>`;
-
   document.getElementById('dash-body').innerHTML = `
-    <!-- Commission hero -->
-    <div class="comm-hero">
-      <div class="ch-label">Commission projetée fin de mois</div>
-      <div class="ch-amount">${commProj.toLocaleString('fr-FR')}<sup> €</sup></div>
-      <div class="ch-tags">
-        <span class="tag ${tagClass}">${tagLabel}</span>
-        <span class="tag tag-neutral">${pctGlobal}% des objectifs</span>
-      </div>
+
+    <!-- Statut -->
+    <div class="statut-banner ${sbClass}">
+      <span class="sb-icon">${sbIcon}</span>
+      <div><div class="sb-title">${sbTitle}</div><div class="sb-sub">${sbSub}</div></div>
     </div>
 
-    <!-- Commission actuelle -->
-    <div class="comm-hero" style="background:#232340;padding:1rem 1.25rem;margin-bottom:1rem">
-      <div class="ch-label" style="font-size:9px">Commission sur réalisé actuel</div>
-      <div class="ch-amount" style="font-size:32px">${commActuel.toLocaleString('fr-FR')}<sup> €</sup></div>
+    <!-- Marge -->
+    <div class="marge-hero">
+      <div class="marge-grid">
+        <div class="marge-block">
+          <div class="mb-lbl">Marge réalisée</div>
+          <div class="mb-val">${fmt(Math.round(v.marge))}<sup> €</sup></div>
+          <div class="mb-delta delta-flat" style="color:rgba(255,255,255,.4);font-size:10px">Aujourd'hui J${JOUR_EN_COURS}</div>
+        </div>
+        <div class="marge-block" style="border:1px solid rgba(226,0,26,.4)">
+          <div class="mb-lbl" style="color:rgba(255,100,100,.7)">Projection fin mois</div>
+          <div class="mb-val" style="color:#FF8080">${fmt(commP.total)}<sup> €</sup></div>
+          <div class="mb-delta ${commP.total>commR.total?'delta-up':'delta-flat'}" style="font-size:10px">Commission estimée</div>
+        </div>
+      </div>
     </div>
 
     <!-- Présence -->
-    <div class="presence-card">
-      <div class="pres-header">
-        <span class="pres-label">⏱️ Présence du mois</span>
-        <span class="pres-val">${v.jours}j</span>
+    <div class="pres-card">
+      <div>
+        <b>Présence du mois</b>
+        <div class="pc-left">Objectifs proratisés à ${Math.round(v.jours/JOURS_MOIS*100)}%</div>
+        <div class="pc-bar" style="width:160px;margin-top:.5rem"><div class="pc-fill" style="width:${Math.round(v.jours/JOURS_MOIS*100)}%"></div></div>
       </div>
-      <div class="pres-meta">sur ${JOURS_MOIS} jours ouvrables · objectifs proratisés à ${Math.round(v.jours/JOURS_MOIS*100)}%</div>
+      <div class="pc-right">
+        <div class="pc-jours">${v.jours}j</div>
+        <div class="pc-sub">sur ${JOURS_MOIS} jours</div>
+      </div>
     </div>
 
     <!-- 5 Items -->
-    <div class="sec-title">Les 5 items payplan</div>
-    ${itemsHTML()}
+    <div class="sec">Les 5 items payplan</div>
+    <div class="items-grid">
+      ${items.map((it,i) => {
+        const p = pct(it.real, it.obj);
+        return `<div class="item-card">
+          <div class="ic-top">
+            <span style="font-size:20px">${it.icon}</span>
+            <span class="ic-pct ${pctClass(p)}">${p}%</span>
+          </div>
+          <div class="ic-label">${it.label}</div>
+          <div class="prog-bg"><div class="prog-fill ${fillClass(p)}" style="width:${Math.min(p,100)}%"></div></div>
+          <div class="ic-vals">
+            <div class="iv-row"><span class="iv-lbl">Réalisé</span><span class="iv-val">${it.fmtR(it.real)}</span></div>
+            <div class="iv-row"><span class="iv-lbl">Objectif</span><span class="iv-val" style="color:var(--muted)">${it.fmtO(it.obj)}</span></div>
+            <div class="iv-row"><span class="iv-lbl">Proj. fin mois</span><span class="iv-proj">${it.fmtP(it.proj)}</span></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
 
     <!-- Détail commissions -->
-    <div class="sec-title">Détail des commissions</div>
-    <div class="detail-card">${detailHTML()}</div>
+    <div class="sec">Détail commissions</div>
+    <div class="card">
+      <div class="comm-row"><span class="cr-name">📱 Mobiles (${v.mob} × 30€)</span><span class="cr-val">${commR.mobComm} €</span></div>
+      <div class="comm-row"><span class="cr-name">🛡️ G3A (${Math.round(v.mob*v.g3a)} × 15€)</span><span class="cr-val">${commR.g3aComm} €</span></div>
+      <div class="comm-row"><span class="cr-name">🔒 SFR Cyber (${v.cyber} × 8€)</span><span class="cr-val">${commR.cyberComm} €</span></div>
+      <div class="comm-row"><span class="cr-name">⚡ Bonus assurance (${v.assuTx}%)</span><span class="cr-val">${commR.assuBonus} €</span></div>
+      <div class="comm-row"><span class="cr-name">🎧 Accessoires marge</span><span class="cr-val">${commR.accComm} €</span></div>
+      <div class="comm-total" style="display:flex;justify-content:space-between;align-items:center">
+        <span class="ct-name">Commission actuelle</span><span class="ct-val">${commR.total} €</span>
+      </div>
+      <div class="comm-proj-row" style="display:flex;justify-content:space-between;align-items:center">
+        <span class="cpr-name">🎯 Projection fin de mois</span><span class="cpr-val">${commP.total} €</span>
+      </div>
+    </div>
 
-    <!-- Simulateur -->
-    <div class="sec-title">Simulateur</div>
-    ${simHTML}
-
-    <div class="refresh-bar"><div class="dot-live"></div>Données simulées · Intégration 3GWin en cours</div>
+    <div class="refresh"><div class="live-dot"></div>Données 3GWIN · ${new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long'})} à ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
   `;
-}
-
-function doSim() {
-  const v = VENDEURS[currentUser];
-  const mob    = parseInt(document.getElementById('s-mob').value)  || 0;
-  const albaTx = (parseInt(document.getElementById('s-alba').value) || 0) / 100;
-  const cyber  = parseInt(document.getElementById('s-cyber').value) || 0;
-  const assuTx = parseInt(document.getElementById('s-assu').value)  || 0;
-  const accMt  = parseInt(document.getElementById('s-acc').value)   || 0;
-  simJoursPasses = parseInt(document.getElementById('s-jours').value) || Math.round(v.jours*0.6);
-
-  const simReal = { mob, alba:albaTx, cyber, assuTx, accMt };
-  v.real = simReal;
-  renderDash(simReal);
-  document.getElementById('dash-body').scrollIntoView({behavior:'smooth',block:'start'});
 }
 </script>
 </body>
