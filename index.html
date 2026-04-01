@@ -245,15 +245,19 @@ const PALIERS = [
   {min:9000, max:Infinity, pct:0.10},
 ];
 
-// Colonnes Google Sheet → noms courts
+// Colonnes Google Sheet → noms courts (noms exacts vérifiés sur le Sheet)
 const COL = {
-  'Code boutique':'codeBoutique','Nom collaborateur':'nom','Rôle':'role',
-  'Marge réalisée (€)':'margeRealisee','Nb mobiles vendus':'nbMobiles',
-  'Nb garanties 3ème année':'nbGaranties','Nb SFR Cyber vendus':'nbCyber',
-  'Nb assurances vendues':'nbAssurances','Nb mobiles pour taux assurance':'nbMobilesAssu',
-  'CA accessoires total (€)':'caAcc','Jour ouvré courant':'jourOuvre',
-  'Nb jours ouvrés total':'nbJoursOuvres','Jours travaillés (individuel)':'joursTravailles',
+  // Données_Commissions
+  'CodeBoutique':'codeBoutique','Vendeur':'nom','Role':'role',
+  'Marge':'margeRealisee','Mobiles':'nbMobiles',
+  'G3A':'nbGaranties','Cyber':'nbCyber',
+  'Assurance':'nbAssurances','MobAssu':'nbMobilesAssu',
+  'CAccessoires':'caAcc','JourOuvre':'jourOuvre',
+  'JoursOuvresTotal':'nbJoursOuvres','JoursTravailles':'joursTravailles',
+  // Items_Mois
   "Nom de l'item":'nomItem','Objectif':'objectif','Unité':'unite',
+  'Poids (% rému)':'poids',
+  // Config
   'Mois en cours':'moisEnCours','Dernière MAJ':'derniereMaj'
 };
 
