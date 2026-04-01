@@ -128,8 +128,7 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .iv-r{font-size:12px;font-weight:700;color:var(--text);text-align:right}
 .iv-r.red{color:var(--sfr)}
 /* Indicateur malus */
-.malus-tag{position:absolute;top:.6rem;right:.6rem;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:#FEE2E2;color:var(--sfr-dark)}
-.ok-tag{position:absolute;top:.6rem;right:.6rem;font-size:9px;font-weight:800;padding:2px 6px;border-radius:6px;background:var(--green-bg);color:var(--green-dk)}
+
 
 /* ── PRÉSENCE ── */
 .pres-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:1rem;margin-bottom:.75rem}
@@ -506,7 +505,8 @@ function renderDash(auth, donnees, items, config) {
   itemsDefs.forEach(it => {
     const r = realMap[it.nomItem];
     const obj = parseFloat(it.objectif) || 1;
-    if (r && r.real >= obj) itemsAtteints++;
+    // Malus basé sur la PROJECTION fin de mois
+    if (r && r.proj >= obj) itemsAtteints++;
   });
 
   // ── COMMISSIONS ──
@@ -546,18 +546,16 @@ function renderDash(auth, donnees, items, config) {
   const itemsHTML = itemsDefs.map(it => {
     const r = realMap[it.nomItem] || { real:0, proj:0, icon:'📊', unite:'' };
     const objVal = parseFloat(it.objectif) || 1;
-    const p = pct(r.real, objVal);
-    const atteint = r.real >= objVal;
+    const p     = pct(r.real, objVal);
+    const pProj = pct(r.proj, objVal);
+    const projOk = r.proj >= objVal;
     const fmtV = val => it.unite === '%' || r.unite === '%' ? val+'%'
                       : it.unite?.includes('€') || r.unite?.includes('€') ? val+'€'
                       : ''+val;
-    return `<div class="item-c ${atteint?'item-ok':'item-bad'}">
-      ${atteint
-        ? `<span class="ok-tag">+0%</span>`
-        : `<span class="malus-tag">-20%</span>`}
+    return `<div class="item-c ${projOk?'item-ok':'item-bad'}">
       <div class="ic-top">
         <span class="ic-icon">${r.icon}</span>
-        <span class="ic-pct-badge ${badgeClass(p)}">${p}%</span>
+        <span class="ic-pct-badge ${badgeClass(pProj)}">${pProj}%</span>
       </div>
       <div class="ic-name">${it.nomItem}</div>
       <div class="prog-bg"><div class="prog-fill ${fillClass(p)}" style="width:${Math.min(p,100)}%"></div></div>
