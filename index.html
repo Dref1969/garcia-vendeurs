@@ -144,6 +144,43 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .live{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
 
+/* ── CHALLENGE ── */
+.chall-card{background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:.75rem}
+.chall-hdr{background:linear-gradient(135deg,#1E40AF,#7C3AED);padding:.9rem 1rem;display:flex;align-items:center;justify-content:space-between}
+.chall-hdr-left{display:flex;align-items:center;gap:10px}
+.chall-icon{font-size:22px}
+.chall-title{font-size:13px;font-weight:800;color:#fff}
+.chall-sub{font-size:10px;color:rgba(255,255,255,.6);margin-top:1px}
+.chall-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;color:#fff}
+.chall-badge.won{background:rgba(0,166,81,.4)}
+.chall-badge.pending{background:rgba(255,255,255,.15)}
+.chall-body{padding:1rem}
+.chall-stats{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem}
+.chall-stat{text-align:center;background:var(--off);border-radius:10px;padding:.6rem}
+.chall-stat-val{font-size:22px;font-weight:900;color:var(--text)}
+.chall-stat-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.chall-bar-bg{height:6px;background:var(--border);border-radius:10px;overflow:hidden;margin-bottom:.5rem}
+.chall-bar-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,#2563EB,#7C3AED);transition:width .8s ease}
+.chall-hist{margin-top:.5rem}
+.chall-day{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid #F1F5F9;font-size:11px}
+.chall-day:last-child{border-bottom:none}
+.chall-day-date{font-weight:700;color:var(--text);min-width:40px}
+.chall-day-rank{font-size:10px;color:var(--muted)}
+.chall-day-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+.chall-day-badge.w{background:#ECFDF5;color:#065F46}
+.chall-day-badge.l{background:#FEF2F2;color:var(--sfr-dark)}
+
+/* ── TOTAL ESTIMÉ ── */
+.total-estime{background:linear-gradient(135deg,#065F46,var(--green));border-radius:12px;padding:1rem;margin-top:.75rem}
+.te-lbl{font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:4px}
+.te-val{font-size:32px;font-weight:900;color:#fff;letter-spacing:-1.5px;line-height:1}
+.te-val sup{font-size:14px;font-weight:400;opacity:.5}
+.te-detail{font-size:10px;color:rgba(255,255,255,.5);margin-top:6px}
+
+/* ── REFRESH BTN ── */
+.h-refresh{background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 10px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;transition:all .2s}
+.h-refresh.spinning{animation:spin .7s linear infinite}
+
 /* ── ERREUR ── */
 .err-wrap{padding:2rem 1rem;text-align:center}
 .err-icon{font-size:40px;margin-bottom:1rem}
@@ -189,7 +226,10 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
         <div class="h-name" id="h-name">—</div>
         <div class="h-boutique" id="h-boutique">—</div>
       </div>
-      <button class="h-logout" onclick="doLogout()">← Retour</button>
+      <div style="display:flex;gap:6px">
+        <button class="h-refresh" id="h-refresh" onclick="if(currentAuth)loadData(currentAuth,true)" title="Actualiser">↻</button>
+        <button class="h-logout" onclick="doLogout()">← Retour</button>
+      </div>
     </div>
     <div class="h-pills">
       <span class="h-pill" id="h-mois">Avril 2026</span>
@@ -313,45 +353,55 @@ function commNette(commBr, itemsAtteints, totalItems) {
 }
 
 /* ════════════════════════════════════════
-   GOOGLE SHEET FETCH (JSONP)
+   GOOGLE SHEET FETCH (CSV + retry)
 ════════════════════════════════════════ */
-let _jc = 0;
-function fetchSheet(sheet) {
-  return new Promise((res, rej) => {
-    const cb = '_sc_' + (++_jc) + '_' + Date.now();
-    const to = setTimeout(() => { delete window[cb]; rej(new Error('Timeout réseau')); }, 15000);
-    window[cb] = r => {
-      clearTimeout(to); delete window[cb];
-      document.getElementById(cb)?.remove();
-      r.status && r.status !== 'ok' ? rej(new Error(r.message || 'Erreur Sheet')) : res(r);
-    };
-    const s = document.createElement('script');
-    s.id = cb;
-    s.src = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheet)}`;
-    s.onerror = () => { clearTimeout(to); delete window[cb]; s.remove(); rej(new Error('Erreur réseau')); };
-    document.head.appendChild(s);
+async function fetchRetry(url, retries=3, delay=1000){
+  for(let i=0;i<=retries;i++){
+    try{
+      const r=await fetch(url);
+      if(!r.ok) throw new Error("HTTP "+r.status);
+      return await r.text();
+    }catch(e){
+      if(i===retries) throw e;
+      await new Promise(ok=>setTimeout(ok,delay*(i+1)));
+    }
+  }
+}
+
+function parseCSV(text){
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(lines.length<2) return [];
+  const hdr=lines[0].split(',').map(h=>h.replace(/^"|"$/g,'').trim());
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(let i=0;i<line.length;i++){
+      const c=line[i];
+      if(c==='"'){inQ=!inQ}
+      else if(c===','&&!inQ){vals.push(cur.replace(/^"|"$/g,'').trim());cur=''}
+      else{cur+=c}
+    }
+    vals.push(cur.replace(/^"|"$/g,'').trim());
+    const obj={};
+    hdr.forEach((h,i)=>{
+      const key=COL[h]||h;
+      let v=vals[i]||'';
+      // Parse dates Google Sheets
+      if(v.match(/^Date\(/)){
+        const p=v.slice(5,-1).split(',');
+        const d=new Date(+p[0],+p[1],+(p[2]||1));
+        const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+        v=key==='derniereMaj'?d.toLocaleDateString('fr-FR'):M[d.getMonth()]+' '+d.getFullYear();
+      }
+      obj[key]=v;
+    });
+    return obj;
   });
 }
 
-function parseRows(r) {
-  const rows = [];
-  if (!r.table?.rows) return rows;
-  r.table.rows.forEach(row => {
-    const obj = {};
-    r.table.cols.forEach((col, i) => {
-      let v = row.c[i]?.v ?? null;
-      const key = COL[col.label] || col.label;
-      if (typeof v === 'string' && v.startsWith('Date(')) {
-        const p = v.slice(5,-1).split(',');
-        const d = new Date(+p[0], +p[1], +(p[2]||1));
-        const M = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
-        v = key === 'derniereMaj' ? d.toLocaleDateString('fr-FR') : M[d.getMonth()] + ' ' + d.getFullYear();
-      }
-      obj[key] = v;
-    });
-    rows.push(obj);
-  });
-  return rows;
+async function fetchSheet(sheet){
+  const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
+  const text=await fetchRetry(url);
+  return parseCSV(text);
 }
 
 /* ════════════════════════════════════════
@@ -414,25 +464,49 @@ function showScreen(id) {
 /* ════════════════════════════════════════
    LOAD DATA
 ════════════════════════════════════════ */
-function loadData(auth) {
-  Promise.all([fetchSheet('Données_Commissions'), fetchSheet('Items_Mois'), fetchSheet('Config')])
-    .then(([r1, r2, r3]) => {
-      const donnees = parseRows(r1);
-      const items   = parseRows(r2);
-      const config  = parseRows(r3);
-      renderDash(auth, donnees, items, config);
+let CACHED_DATA = null;
+let LAST_REFRESH = 0;
+
+function loadData(auth, silent) {
+  if (!silent) showScreen('loading');
+  Promise.all([
+    fetchSheet('Données_Commissions'),
+    fetchSheet('Items_Mois'),
+    fetchSheet('Config'),
+    fetchSheet('Historique_Challenges').catch(()=>[])
+  ])
+    .then(([donnees, items, config, challenges]) => {
+      CACHED_DATA = { donnees, items, config, challenges };
+      LAST_REFRESH = Date.now();
+      renderDash(auth, donnees, items, config, challenges);
     })
     .catch(e => {
+      if (silent && CACHED_DATA) {
+        // Refresh silencieux échoué — garder les données en cache
+        return;
+      }
       showScreen('dash');
       document.getElementById('dash-body').innerHTML = `
         <div class="err-wrap">
           <div class="err-icon">⚠️</div>
           <div class="err-title">Erreur de connexion</div>
-          <div class="err-msg">${e.message}<br><br>Vérifiez que la feuille Google est publiée sur le web.</div>
+          <div class="err-msg">${e.message}<br><br>Vérifiez votre connexion internet.</div>
           <button class="btn-main" style="width:auto;padding:12px 24px" onclick="doLogout()">Retour</button>
         </div>`;
     });
 }
+
+// Refresh intelligent
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentAuth && Date.now() - LAST_REFRESH > 30000) {
+    loadData(currentAuth, true);
+  }
+});
+window.addEventListener('focus', () => {
+  if (currentAuth && Date.now() - LAST_REFRESH > 30000) {
+    loadData(currentAuth, true);
+  }
+});
 
 /* ════════════════════════════════════════
    RENDER
@@ -442,7 +516,8 @@ function pct(real, obj){ return obj > 0 ? Math.min(Math.round(real/obj*100), 200
 function badgeClass(p){ return p>=100?'b-great':p>=75?'b-ok':p>=50?'b-warn':'b-bad'; }
 function fillClass(p){ return p>=100?'pf-great':p>=75?'pf-ok':p>=50?'pf-warn':'pf-bad'; }
 
-function renderDash(auth, donnees, items, config) {
+function renderDash(auth, donnees, items, config, challenges) {
+  challenges = challenges || [];
   // Trouver le vendeur dans le Sheet
   const nomSheet = auth.nomSheet;
   const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === nomSheet.toUpperCase());
@@ -572,6 +647,72 @@ function renderDash(auth, donnees, items, config) {
     ? `<span style="color:var(--green-dk);font-weight:700">✓ Tous les items atteints — commission pleine !</span>`
     : `<span style="color:var(--sfr)">⚠️ ${ratés} item${ratés>1?'s':''} non atteint${ratés>1?'s':''} → malus de ${malusPct}%</span>`;
 
+  // ── CHALLENGES ──
+  // Chercher les jours où ce vendeur apparaît dans Top3_Gagnes
+  const EXCLUS_CHALLENGE = ['HASSENE','LOUANE','ROMAIN GP'];
+  const isExcluChallenge = EXCLUS_CHALLENGE.includes(nomSheet.toUpperCase());
+  let challJoursGagnes = 0;
+  let challTotal = challenges.length;
+  const challHist = [];
+
+  if (!isExcluChallenge) {
+    challenges.forEach(d => {
+      const top3 = (d.Top3 || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const gagnes = (d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
+      const isInTop3 = top3.some(n => n.toUpperCase() === nomSheet.toUpperCase());
+      const hasWon = gagnes.some(n => n.toUpperCase() === nomSheet.toUpperCase());
+      if (isInTop3 || hasWon) {
+        const rank = top3.findIndex(n => n.toUpperCase() === nomSheet.toUpperCase()) + 1;
+        challHist.push({ date: d.Date || '', rank, won: hasWon });
+      }
+      if (hasWon) challJoursGagnes++;
+    });
+  }
+
+  const primeChallenge = challJoursGagnes * 20;
+  const totalEstime = commNetteP + primeChallenge;
+  const challPct = challTotal > 0 ? Math.round(challJoursGagnes / challTotal * 100) : 0;
+
+  // Challenge HTML
+  const challHTML = isExcluChallenge ? '' : `
+    <div class="sec">Challenge du mois</div>
+    <div class="chall-card">
+      <div class="chall-hdr">
+        <div class="chall-hdr-left">
+          <span class="chall-icon">🏆</span>
+          <div>
+            <div class="chall-title">Challenge Vendeur</div>
+            <div class="chall-sub">Top 3 marge jour + 400 € min → 20 €/jour</div>
+          </div>
+        </div>
+        <span class="chall-badge ${primeChallenge>0?'won':'pending'}">${primeChallenge>0?fmt(primeChallenge)+' €':'En cours'}</span>
+      </div>
+      <div class="chall-body">
+        <div class="chall-stats">
+          <div class="chall-stat">
+            <div class="chall-stat-val">${challJoursGagnes}</div>
+            <div class="chall-stat-lbl">Jours gagnés</div>
+          </div>
+          <div class="chall-stat">
+            <div class="chall-stat-val" style="color:var(--green)">${fmt(primeChallenge)} €</div>
+            <div class="chall-stat-lbl">Prime cumulée</div>
+          </div>
+        </div>
+        <div class="chall-bar-bg"><div class="chall-bar-fill" style="width:${challPct}%"></div></div>
+        <div style="font-size:10px;color:var(--muted);text-align:right;margin-bottom:.5rem">${challJoursGagnes} / ${challTotal} jours</div>
+        ${challHist.length > 0 ? `
+        <div class="chall-hist">
+          ${challHist.slice(-5).reverse().map(h => `
+            <div class="chall-day">
+              <span class="chall-day-date">${h.date}</span>
+              <span class="chall-day-rank">Top ${h.rank}</span>
+              <span class="chall-day-badge ${h.won?'w':'l'}">${h.won?'✓ Gagné':'✗ < 400 €'}</span>
+            </div>
+          `).join('')}
+        </div>` : '<div style="text-align:center;font-size:11px;color:var(--muted);padding:.5rem">Aucune participation enregistrée</div>'}
+      </div>
+    </div>`;
+
   document.getElementById('dash-body').innerHTML = `
 
     <!-- Statut -->
@@ -595,9 +736,9 @@ function renderDash(auth, donnees, items, config) {
         </div>
       </div>
 
-      <!-- Commission nette projetée -->
+      <!-- Commission projetée -->
       <div class="comm-nette">
-        <div class="cn-lbl">Commission nette projetée</div>
+        <div class="cn-lbl">Commission projetée</div>
         <div class="cn-main">
           <div class="cn-val">${fmt(commNetteP)}<sup> €</sup></div>
           ${malusPct > 0 ? `<span class="cn-malus">-${malusPct}% · ${100-malusPct}% retenu</span>` : '<span class="cn-malus" style="background:rgba(0,166,81,.2);color:#86EFAC">✓ 100% retenu</span>'}
@@ -607,6 +748,14 @@ function renderDash(auth, donnees, items, config) {
         </div>
         <div class="cn-sub" style="margin-top:4px">${fmt(commBrP)} € × ${100-malusPct}% (${5-ratés}/5 items) = <strong style="color:rgba(255,255,255,.7)">${fmt(commNetteP)} €</strong></div>
       </div>
+
+      ${primeChallenge > 0 ? `
+      <!-- Total estimé (commission + challenge) -->
+      <div class="total-estime">
+        <div class="te-lbl">Total estimé (commission + challenge)</div>
+        <div class="te-val">${fmt(totalEstime)}<sup> €</sup></div>
+        <div class="te-detail">${fmt(commNetteP)} € commission + ${fmt(primeChallenge)} € challenge</div>
+      </div>` : ''}
     </div>
 
     <!-- Palier -->
@@ -635,6 +784,8 @@ function renderDash(auth, donnees, items, config) {
       <div class="pres-sub">sur ${nbJours} jours ouvrables · objectifs proratisés à ${Math.round(joursTrav/nbJours*100)}%</div>
       <div class="pres-bar"><div class="pres-fill" style="width:${Math.round(joursTrav/nbJours*100)}%"></div></div>
     </div>
+
+    ${challHTML}
 
     <!-- 5 Items -->
     <div class="sec">Les 5 items — impact sur commission</div>
