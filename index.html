@@ -254,7 +254,7 @@ const VENDEURS_AUTH = {
   'chloe':   { pin:'2967', nomSheet:'CHLOE R' },
   'emilie':  { pin:'8403', nomSheet:'EMILIE' },
   'emmy':    { pin:'4651', nomSheet:'EMMY' },
-  'hassene': { pin:'9274', nomSheet:'HASSENE' },
+  'hassene': { pin:'9274', nomSheet:'HASSENE' }, 'haval': { pin:'9749', nomSheet:'HAVAL' },
   'ilian':   { pin:'3586', nomSheet:'ILIAN' },
   'julie':   { pin:'6038', nomSheet:'JULIE TLR' },
   'louane':  { pin:'1847', nomSheet:'LOUANE' },
@@ -400,7 +400,7 @@ function parseCSV(text){
 
 async function fetchSheet(sheet){
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
-  const text=await fetchRetry(url);
+  const text=await fetchRetry(url);h
   return parseCSV(text);
 }
 
