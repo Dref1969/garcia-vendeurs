@@ -400,7 +400,7 @@ function parseCSV(text){
 
 async function fetchSheet(sheet){
   const url=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheet)}`;
-  const text=await fetchRetry(url);h
+  const text=await fetchRetry(url);
   return parseCSV(text);
 }
 
