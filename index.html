@@ -648,14 +648,27 @@ function renderDash(auth, donnees, items, config, challenges) {
     : `<span style="color:var(--sfr)">⚠️ ${ratés} item${ratés>1?'s':''} non atteint${ratés>1?'s':''} → malus de ${malusPct}%</span>`;
 
   // ── CHALLENGES ──
-  // Chercher les jours où ce vendeur apparaît dans Top3_Gagnes
-  const EXCLUS_CHALLENGE = ['HASSENE','LOUANE','ROMAIN GP'];
-  const isExcluChallenge = EXCLUS_CHALLENGE.includes(nomSheet.toUpperCase());
+  // Challenges spécifiques manageurs/CDV : prime 20€/jour si seuil atteint
+  const SPECIFIC_CHALLENGE = {
+    'HASSENE':   { key:'Amboise_Won', title:'Challenge Amboise',  sub:'Marge boutique Amboise ≥ 700 €/jour → 20 €/jour',  failLabel:'✗ < 700 €' },
+    'LOUANE':    { key:'Louane_Won',  title:'Challenge Cholet',   sub:'Marge boutique Cholet ≥ 1 000 €/jour → 20 €/jour', failLabel:'✗ < 1 000 €' },
+    'ROMAIN GP': { key:'Groupe_Won',  title:'Challenge Groupe',   sub:'Marge groupe ≥ 4 000 €/jour → 20 €/jour',          failLabel:'✗ < 4 000 €' }
+  };
+  const specConfig = SPECIFIC_CHALLENGE[nomSheet.toUpperCase()];
+
   let challJoursGagnes = 0;
   let challTotal = challenges.length;
   const challHist = [];
 
-  if (!isExcluChallenge) {
+  if (specConfig) {
+    // Challenge spécifique (Hassene/Louane/Romain GP) : 1 ligne d'historique par jour
+    challenges.forEach(d => {
+      const won = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
+      challHist.push({ date: d.Date || '', won });
+      if (won) challJoursGagnes++;
+    });
+  } else {
+    // Challenge Top 3 standard : 1 ligne uniquement les jours où présent dans Top3
     challenges.forEach(d => {
       const top3 = (d.Top3 || '').split(',').map(s=>s.trim()).filter(Boolean);
       const gagnes = (d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -673,16 +686,19 @@ function renderDash(auth, donnees, items, config, challenges) {
   const totalEstime = commNetteP + primeChallenge;
   const challPct = challTotal > 0 ? Math.round(challJoursGagnes / challTotal * 100) : 0;
 
-  // Challenge HTML
-  const challHTML = isExcluChallenge ? '' : `
+  const challTitle = specConfig ? specConfig.title : 'Challenge Vendeur';
+  const challSub   = specConfig ? specConfig.sub   : 'Top 3 marge jour + 400 € min → 20 €/jour';
+
+  // Challenge HTML — affiché pour tous (Top 3 standard ou challenge spécifique)
+  const challHTML = `
     <div class="sec">Challenge du mois</div>
     <div class="chall-card">
       <div class="chall-hdr">
         <div class="chall-hdr-left">
           <span class="chall-icon">🏆</span>
           <div>
-            <div class="chall-title">Challenge Vendeur</div>
-            <div class="chall-sub">Top 3 marge jour + 400 € min → 20 €/jour</div>
+            <div class="chall-title">${challTitle}</div>
+            <div class="chall-sub">${challSub}</div>
           </div>
         </div>
         <span class="chall-badge ${primeChallenge>0?'won':'pending'}">${primeChallenge>0?fmt(primeChallenge)+' €':'En cours'}</span>
@@ -705,8 +721,8 @@ function renderDash(auth, donnees, items, config, challenges) {
           ${challHist.slice(-5).reverse().map(h => `
             <div class="chall-day">
               <span class="chall-day-date">${h.date}</span>
-              <span class="chall-day-rank">Top ${h.rank}</span>
-              <span class="chall-day-badge ${h.won?'w':'l'}">${h.won?'✓ Gagné':'✗ < 400 €'}</span>
+              ${specConfig ? `<span class="chall-day-rank">Objectif</span>` : `<span class="chall-day-rank">Top ${h.rank}</span>`}
+              <span class="chall-day-badge ${h.won?'w':'l'}">${h.won?'✓ Gagné':(specConfig?specConfig.failLabel:'✗ < 400 €')}</span>
             </div>
           `).join('')}
         </div>` : '<div style="text-align:center;font-size:11px;color:var(--muted);padding:.5rem">Aucune participation enregistrée</div>'}
