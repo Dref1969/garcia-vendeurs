@@ -195,7 +195,7 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
   <div class="login-top">
     <div class="sfr-logo"><span>SFR</span></div>
     <div class="lt-h">Mes Résultats</div>
-    <div class="lt-s">Groupe Garcia · Avril 2026</div>
+    <div class="lt-s" id="login-mois">Groupe Garcia</div>
   </div>
   <div class="login-card">
     <span class="lbl">Prénom</span>
@@ -424,6 +424,14 @@ function norm(s){ return s.trim().toLowerCase().normalize('NFD').replace(/[\u030
 function getPin(){ return pins.map(p=>p.value).join(''); }
 let currentAuth = null;
 
+// Mois courant inject\u00e9 dynamiquement sur la page login (la pill header est g\u00e9r\u00e9e par cfg.moisEnCours)
+(function(){
+  const M=['Janvier','F\u00e9vrier','Mars','Avril','Mai','Juin','Juillet','Ao\u00fbt','Septembre','Octobre','Novembre','D\u00e9cembre'];
+  const d=new Date();
+  const el=document.getElementById('login-mois');
+  if(el) el.textContent='Groupe Garcia \u00b7 '+M[d.getMonth()]+' '+d.getFullYear();
+})();
+
 function tryLogin() {
   const prenom = norm(document.getElementById('inp-prenom').value);
   const pin = getPin();
@@ -536,7 +544,8 @@ function renderDash(auth, donnees, items, config, challenges) {
 
   // Config
   const cfg = config[0] || {};
-  const moisLabel = cfg.moisEnCours || 'Avril 2026';
+  const moisFallback = (function(){const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];const d=new Date();return M[d.getMonth()]+' '+d.getFullYear();})();
+  const moisLabel = cfg.moisEnCours || moisFallback;
   const majDate   = cfg.derniereMaj || '';
   const boutique  = BOUTIQUES[v.codeBoutique] || v.codeBoutique || '';
 
