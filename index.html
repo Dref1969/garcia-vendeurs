@@ -665,20 +665,35 @@ function renderDash(auth, donnees, items, config, challenges) {
   };
   const specConfig = SPECIFIC_CHALLENGE[nomSheet.toUpperCase()];
 
+  // Filtre Historique_Challenges par mois en cours (cfg.moisEnCours format "mai 2026")
+  // Sans ce filtre, le dashboard cumulerait les primes de tous les mois passés.
+  const MOIS_NAMES = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+  const moisMatch = String(moisLabel).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').match(/(\w+)\s+(\d{4})/);
+  const moisIdx = moisMatch ? MOIS_NAMES.indexOf(moisMatch[1]) : -1;
+  const anneeIdx = moisMatch ? parseInt(moisMatch[2]) : -1;
+  function inMoisCourant(dateStr) {
+    if (moisIdx < 0) return true; // fallback: ne filtre pas si mois non parsé
+    if (!dateStr) return false;
+    const parts = String(dateStr).split('/');
+    if (parts.length !== 3) return false;
+    return parseInt(parts[1]) - 1 === moisIdx && parseInt(parts[2]) === anneeIdx;
+  }
+  const challengesMois = challenges.filter(d => inMoisCourant(d.Date));
+
   let challJoursGagnes = 0;
-  let challTotal = challenges.length;
+  let challTotal = challengesMois.length;
   const challHist = [];
 
   if (specConfig) {
     // Challenge spécifique (Hassene/Louane/Romain GP) : 1 ligne d'historique par jour
-    challenges.forEach(d => {
+    challengesMois.forEach(d => {
       const won = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
       challHist.push({ date: d.Date || '', won });
       if (won) challJoursGagnes++;
     });
   } else {
     // Challenge Top 3 standard : 1 ligne uniquement les jours où présent dans Top3
-    challenges.forEach(d => {
+    challengesMois.forEach(d => {
       const top3 = (d.Top3 || '').split(',').map(s=>s.trim()).filter(Boolean);
       const gagnes = (d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
       const isInTop3 = top3.some(n => n.toUpperCase() === nomSheet.toUpperCase());
