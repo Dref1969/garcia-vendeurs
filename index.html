@@ -154,6 +154,8 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .chall-badge{font-size:11px;font-weight:800;padding:4px 10px;border-radius:10px;color:#fff}
 .chall-badge.won{background:rgba(0,166,81,.4)}
 .chall-badge.pending{background:rgba(255,255,255,.15)}
+.chall-mois-sel{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;outline:none}
+.chall-mois-sel option{background:#1E40AF;color:#fff}
 .chall-body{padding:1rem}
 .chall-stats{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem}
 .chall-stat{text-align:center;background:var(--off);border-radius:10px;padding:.6rem}
@@ -665,57 +667,111 @@ function renderDash(auth, donnees, items, config, challenges) {
   };
   const specConfig = SPECIFIC_CHALLENGE[nomSheet.toUpperCase()];
 
-  // Filtre Historique_Challenges par mois en cours (cfg.moisEnCours format "mai 2026")
-  // Sans ce filtre, le dashboard cumulerait les primes de tous les mois passés.
+  // Parsing mois en cours (format "mai 2026")
   const MOIS_NAMES = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+  const MOIS_DISP  = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
   const moisMatch = String(moisLabel).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').match(/(\w+)\s+(\d{4})/);
-  const moisIdx = moisMatch ? MOIS_NAMES.indexOf(moisMatch[1]) : -1;
-  const anneeIdx = moisMatch ? parseInt(moisMatch[2]) : -1;
-  function inMoisCourant(dateStr) {
-    if (moisIdx < 0) return true; // fallback: ne filtre pas si mois non parsé
-    if (!dateStr) return false;
-    const parts = String(dateStr).split('/');
-    if (parts.length !== 3) return false;
-    return parseInt(parts[1]) - 1 === moisIdx && parseInt(parts[2]) === anneeIdx;
-  }
-  const challengesMois = challenges.filter(d => inMoisCourant(d.Date));
+  const moisIdx  = moisMatch ? MOIS_NAMES.indexOf(moisMatch[1]) : new Date().getMonth();
+  const anneeIdx = moisMatch ? parseInt(moisMatch[2])           : new Date().getFullYear();
 
-  let challJoursGagnes = 0;
-  let challTotal = challengesMois.length;
-  const challHist = [];
+  // Liste des mois disponibles dans Historique_Challenges (pour le sélecteur)
+  const moisSet = new Set();
+  challenges.forEach(d => {
+    const parts = String(d.Date || '').split('/');
+    if (parts.length === 3) {
+      const m = parseInt(parts[1]) - 1, y = parseInt(parts[2]);
+      if (!isNaN(m) && !isNaN(y)) moisSet.add(m + '_' + y);
+    }
+  });
+  const currentKey = moisIdx + '_' + anneeIdx;
+  if (!moisSet.has(currentKey)) moisSet.add(currentKey); // toujours inclure mois en cours
+  const moisDispo = [...moisSet].map(k => {
+    const [m, y] = k.split('_').map(Number);
+    return { m, y, label: MOIS_DISP[m] + ' ' + y, key: k };
+  }).sort((a, b) => b.y - a.y || b.m - a.m);
 
-  if (specConfig) {
-    // Challenge spécifique (Hassene/Louane/Romain GP) : 1 ligne d'historique par jour
-    challengesMois.forEach(d => {
-      const won = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
-      challHist.push({ date: d.Date || '', won });
-      if (won) challJoursGagnes++;
+  // Calcul stats pour un mois donné
+  function challStatsFor(mArg, yArg) {
+    const filtered = challenges.filter(d => {
+      const parts = String(d.Date || '').split('/');
+      if (parts.length !== 3) return false;
+      return parseInt(parts[1]) - 1 === mArg && parseInt(parts[2]) === yArg;
     });
-  } else {
-    // Challenge Top 3 standard : 1 ligne uniquement les jours où présent dans Top3
-    challengesMois.forEach(d => {
-      const top3 = (d.Top3 || '').split(',').map(s=>s.trim()).filter(Boolean);
-      const gagnes = (d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
-      const isInTop3 = top3.some(n => n.toUpperCase() === nomSheet.toUpperCase());
-      const hasWon = gagnes.some(n => n.toUpperCase() === nomSheet.toUpperCase());
-      if (isInTop3 || hasWon) {
-        const rank = top3.findIndex(n => n.toUpperCase() === nomSheet.toUpperCase()) + 1;
-        challHist.push({ date: d.Date || '', rank, won: hasWon });
-      }
-      if (hasWon) challJoursGagnes++;
-    });
+    let won = 0;
+    const hist = [];
+    if (specConfig) {
+      filtered.forEach(d => {
+        const w = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
+        hist.push({ date: d.Date || '', won: w });
+        if (w) won++;
+      });
+    } else {
+      filtered.forEach(d => {
+        const top3 = (d.Top3 || '').split(',').map(s=>s.trim()).filter(Boolean);
+        const gagnes = (d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
+        const isInTop3 = top3.some(n => n.toUpperCase() === nomSheet.toUpperCase());
+        const hasWon = gagnes.some(n => n.toUpperCase() === nomSheet.toUpperCase());
+        if (isInTop3 || hasWon) {
+          const rank = top3.findIndex(n => n.toUpperCase() === nomSheet.toUpperCase()) + 1;
+          hist.push({ date: d.Date || '', rank, won: hasWon });
+        }
+        if (hasWon) won++;
+      });
+    }
+    return { won, total: filtered.length, hist, prime: won * 20 };
   }
 
-  const primeChallenge = challJoursGagnes * 20;
+  // Stats mois en cours (pour le Total estimé qui reste basé sur ce mois)
+  const currentStats = challStatsFor(moisIdx, anneeIdx);
+  const primeChallenge = currentStats.prime;
   const totalEstime = commNetteP + primeChallenge;
-  const challPct = challTotal > 0 ? Math.round(challJoursGagnes / challTotal * 100) : 0;
 
   const challTitle = specConfig ? specConfig.title : 'Challenge Vendeur';
   const challSub   = specConfig ? specConfig.sub   : 'Top 3 marge jour + 400 € min → 20 €/jour';
 
+  // Rend uniquement la partie body (stats + bar + hist + badge) — utilisée à l'init et au changement de mois
+  function renderChallBody(stats) {
+    const pct = stats.total > 0 ? Math.round(stats.won / stats.total * 100) : 0;
+    return `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
+        <span class="chall-badge ${stats.prime>0?'won':'pending'}" style="color:${stats.prime>0?'var(--green-dk)':'var(--muted)'};background:${stats.prime>0?'var(--green-bg)':'var(--off)'}">${stats.prime>0?fmt(stats.prime)+' €':'En cours'}</span>
+      </div>
+      <div class="chall-stats">
+        <div class="chall-stat">
+          <div class="chall-stat-val">${stats.won}</div>
+          <div class="chall-stat-lbl">Jours gagnés</div>
+        </div>
+        <div class="chall-stat">
+          <div class="chall-stat-val" style="color:var(--green)">${fmt(stats.prime)} €</div>
+          <div class="chall-stat-lbl">Prime cumulée</div>
+        </div>
+      </div>
+      <div class="chall-bar-bg"><div class="chall-bar-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:10px;color:var(--muted);text-align:right;margin-bottom:.5rem">${stats.won} / ${stats.total} jours</div>
+      ${stats.hist.length > 0 ? `
+      <div class="chall-hist">
+        ${stats.hist.slice(-5).reverse().map(h => `
+          <div class="chall-day">
+            <span class="chall-day-date">${h.date}</span>
+            ${specConfig ? `<span class="chall-day-rank">Objectif</span>` : `<span class="chall-day-rank">Top ${h.rank}</span>`}
+            <span class="chall-day-badge ${h.won?'w':'l'}">${h.won?'✓ Gagné':(specConfig?specConfig.failLabel:'✗ < 400 €')}</span>
+          </div>
+        `).join('')}
+      </div>` : '<div style="text-align:center;font-size:11px;color:var(--muted);padding:.5rem">Aucune participation enregistrée</div>'}
+    `;
+  }
+
+  const moisOptionsHTML = moisDispo.map(mo =>
+    `<option value="${mo.m}_${mo.y}"${mo.m===moisIdx&&mo.y===anneeIdx?' selected':''}>${mo.label}</option>`
+  ).join('');
+
+  // Stash les helpers pour le handler onChange (attaché après innerHTML)
+  window.__challStatsFor   = challStatsFor;
+  window.__challRenderBody = renderChallBody;
+
   // Challenge HTML — affiché pour tous (Top 3 standard ou challenge spécifique)
   const challHTML = `
-    <div class="sec">Challenge du mois</div>
+    <div class="sec">Challenge</div>
     <div class="chall-card">
       <div class="chall-hdr">
         <div class="chall-hdr-left">
@@ -725,32 +781,9 @@ function renderDash(auth, donnees, items, config, challenges) {
             <div class="chall-sub">${challSub}</div>
           </div>
         </div>
-        <span class="chall-badge ${primeChallenge>0?'won':'pending'}">${primeChallenge>0?fmt(primeChallenge)+' €':'En cours'}</span>
+        <select id="chall-mois-sel" class="chall-mois-sel">${moisOptionsHTML}</select>
       </div>
-      <div class="chall-body">
-        <div class="chall-stats">
-          <div class="chall-stat">
-            <div class="chall-stat-val">${challJoursGagnes}</div>
-            <div class="chall-stat-lbl">Jours gagnés</div>
-          </div>
-          <div class="chall-stat">
-            <div class="chall-stat-val" style="color:var(--green)">${fmt(primeChallenge)} €</div>
-            <div class="chall-stat-lbl">Prime cumulée</div>
-          </div>
-        </div>
-        <div class="chall-bar-bg"><div class="chall-bar-fill" style="width:${challPct}%"></div></div>
-        <div style="font-size:10px;color:var(--muted);text-align:right;margin-bottom:.5rem">${challJoursGagnes} / ${challTotal} jours</div>
-        ${challHist.length > 0 ? `
-        <div class="chall-hist">
-          ${challHist.slice(-5).reverse().map(h => `
-            <div class="chall-day">
-              <span class="chall-day-date">${h.date}</span>
-              ${specConfig ? `<span class="chall-day-rank">Objectif</span>` : `<span class="chall-day-rank">Top ${h.rank}</span>`}
-              <span class="chall-day-badge ${h.won?'w':'l'}">${h.won?'✓ Gagné':(specConfig?specConfig.failLabel:'✗ < 400 €')}</span>
-            </div>
-          `).join('')}
-        </div>` : '<div style="text-align:center;font-size:11px;color:var(--muted);padding:.5rem">Aucune participation enregistrée</div>'}
-      </div>
+      <div id="chall-body-inner" class="chall-body">${renderChallBody(currentStats)}</div>
     </div>`;
 
   document.getElementById('dash-body').innerHTML = `
@@ -836,6 +869,17 @@ function renderDash(auth, donnees, items, config, challenges) {
 
     <div class="refresh"><div class="live"></div>Google Sheet · ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
   `;
+
+  // Sélecteur de mois sur la carte Challenge — re-render le body avec le mois choisi
+  const moisSelEl = document.getElementById('chall-mois-sel');
+  if (moisSelEl && window.__challStatsFor && window.__challRenderBody) {
+    moisSelEl.addEventListener('change', function(e){
+      const parts = e.target.value.split('_').map(Number);
+      const stats = window.__challStatsFor(parts[0], parts[1]);
+      const body = document.getElementById('chall-body-inner');
+      if (body) body.innerHTML = window.__challRenderBody(stats);
+    });
+  }
 
   showScreen('dash');
 }
