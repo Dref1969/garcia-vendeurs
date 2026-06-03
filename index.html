@@ -12,15 +12,35 @@
   --sfr:#E2001A;--sfr-dark:#A8001A;
   --pro:#0F0F1E;--pro2:#1A1A2E;--pro3:#252548;
   --off:#F4F4F7;--white:#FFF;--border:#E2E2EA;
-  --text:#0F0F1E;--muted:#666;--light:#AAA;
+  --text:#0F0F1E;--muted:#666;--light:#6B7280;
   --green:#00A651;--green-bg:#E6F7EE;--green-dk:#006633;
-  --amber:#D97706;--amber-bg:#FEF3C7;
-  --orange:#EA580C;--orange-bg:#FFF0E8;
+  --amber:#D97706;--amber-bg:#FEF3C7;--amber-dk:#92400E;
+  --orange:#EA580C;--orange-bg:#FFF0E8;--orange-dk:#9A3412;
   --safe:env(safe-area-inset-bottom,16px);
 }
 html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Segoe UI',sans-serif;color:var(--text);overflow-x:hidden}
 .screen{display:none;min-height:100dvh;flex-direction:column}
 .screen.active{display:flex}
+/* Tablette / grand mobile : cadre type téléphone centré */
+@media(min-width:540px) and (max-width:899px){
+  html,body{background:#0A0A14}
+  .screen{max-width:480px;margin-inline:auto;box-shadow:0 0 80px rgba(0,0,0,.55)}
+}
+/* PC : vraie mise en page large (2 colonnes + items sur 5 de front) */
+@media(min-width:900px){
+  .screen{max-width:none;margin:0}
+  #dash .header{padding-left:max(1.25rem,calc((100vw - 1140px)/2 + 1.25rem));padding-right:max(1.25rem,calc((100vw - 1140px)/2 + 1.25rem))}
+  .body{max-width:1140px;margin-inline:auto;width:100%;padding:1rem 1.25rem calc(1.25rem + var(--safe))}
+  .dash-cols{display:grid;grid-template-columns:1.5fr 1fr;gap:1rem;align-items:start;margin-top:.25rem}
+  .col-main,.col-side{display:flex;flex-direction:column;gap:.9rem}
+  .col-main>*,.col-side>*{margin-bottom:0!important}
+  .col-side .sec{padding-top:0}
+  .items-block{margin-top:1rem}
+  .body .items-grid{grid-template-columns:repeat(5,1fr)}
+  /* l'item orphelin reprend sa cellule normale en 5 colonnes */
+  .body .items-grid > .item-c:last-child:nth-child(odd){grid-column:auto}
+  .body .statut{margin-bottom:0}
+}
 
 /* ── LOGIN ── */
 #login{background:var(--pro);justify-content:flex-end}
@@ -34,7 +54,7 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .field-inp{width:100%;padding:15px 16px;border:2px solid var(--border);border-radius:13px;font-size:17px;font-family:inherit;background:var(--off);color:var(--text);outline:none;transition:border-color .2s;margin-bottom:1.25rem}
 .field-inp:focus{border-color:var(--sfr);background:#fff}
 .pin-row{display:flex;gap:10px;margin-bottom:1.5rem}
-.pin-d{flex:1;height:62px;border:2px solid var(--border);border-radius:13px;font-size:28px;font-weight:800;text-align:center;background:var(--off);color:var(--text);outline:none;transition:all .2s;-webkit-appearance:none;font-family:inherit}
+.pin-d{flex:1;min-width:0;width:100%;height:62px;border:2px solid var(--border);border-radius:13px;font-size:28px;font-weight:800;text-align:center;background:var(--off);color:var(--text);outline:none;transition:all .2s;-webkit-appearance:none;font-family:inherit}
 .pin-d:focus{border-color:var(--sfr);background:#fff}
 .btn-main{width:100%;padding:17px;background:var(--sfr);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;font-family:inherit;cursor:pointer;transition:background .15s}
 .btn-main:active{background:var(--sfr-dark)}
@@ -105,23 +125,41 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 
 /* ── ITEMS ── */
 .items-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.75rem}
+/* 5ᵉ item orphelin → pleine largeur au lieu d'une cellule vide */
+.items-grid > .item-c:last-child:nth-child(odd){grid-column:1 / -1}
 .item-c{background:#fff;border:1px solid var(--border);border-radius:14px;padding:.9rem;position:relative}
 .item-c.item-ok{border-color:#86EFAC}
 .item-c.item-bad{border-color:#FCA5A5}
+/* Micro-célébration : item dont la projection atteint/dépasse l'objectif */
+@keyframes badgePop{0%{transform:scale(.55);opacity:0}60%{transform:scale(1.14)}100%{transform:scale(1);opacity:1}}
+@keyframes okPulse{0%{box-shadow:0 0 0 0 rgba(0,166,81,.35)}70%{box-shadow:0 0 0 7px rgba(0,166,81,0)}100%{box-shadow:0 0 0 0 rgba(0,166,81,0)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.item-c.item-ok{animation:okPulse 1.8s ease-out .3s 2}
+.ic-pct-badge.b-great{display:inline-block;animation:badgePop .5s cubic-bezier(.34,1.56,.64,1) both}
+/* Entrée en fondu douce des blocs (statut, colonnes, items, refresh) */
+#dash-body > *{animation:cardIn .45s ease both}
+#dash-body > *:nth-child(2){animation-delay:.06s}
+#dash-body > *:nth-child(3){animation-delay:.12s}
+#dash-body > *:nth-child(4){animation-delay:.18s}
+/* Respect des préférences d'accessibilité */
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 .ic-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
 .ic-icon{font-size:20px}
 .ic-pct-badge{font-size:12px;font-weight:800;padding:3px 8px;border-radius:8px}
-.b-great{background:var(--amber-bg);color:var(--amber)}
-.b-ok{background:var(--green-bg);color:var(--green-dk)}
-.b-warn{background:var(--orange-bg);color:var(--orange)}
+/* ≥100% = vert (réussite), 75-99 = ambre (tout proche), 50-74 = orange, <50 = rouge */
+.b-great{background:var(--green-bg);color:var(--green-dk)}
+.b-ok{background:var(--amber-bg);color:var(--amber-dk)}
+.b-warn{background:var(--orange-bg);color:var(--orange-dk)}
 .b-bad{background:#FEE2E2;color:var(--sfr-dark)}
 .ic-name{font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.3px;margin-bottom:.45rem;line-height:1.3}
+.ic-proj-cap{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-top:2px;text-align:right}
 .prog-bg{height:4px;background:var(--border);border-radius:10px;margin-bottom:.45rem;overflow:hidden}
 .prog-fill{height:100%;border-radius:10px;transition:width .8s}
-.pf-great{background:var(--amber)}
-.pf-ok{background:var(--green)}
+.pf-great{background:var(--green)}
+.pf-ok{background:var(--amber)}
 .pf-warn{background:var(--orange)}
 .pf-bad{background:var(--sfr)}
+.iv-r.green{color:var(--green-dk)}
 .ic-vals{display:flex;flex-direction:column;gap:3px}
 .iv{display:flex;justify-content:space-between;align-items:baseline;gap:4px}
 .iv-l{font-size:10px;color:var(--light);flex-shrink:0}
@@ -180,7 +218,8 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .te-detail{font-size:10px;color:rgba(255,255,255,.5);margin-top:6px}
 
 /* ── REFRESH BTN ── */
-.h-refresh{background:rgba(255,255,255,.15);border:none;color:#fff;padding:7px 10px;border-radius:20px;font-size:14px;cursor:pointer;display:flex;align-items:center;transition:all .2s}
+.h-refresh{background:rgba(255,255,255,.15);border:none;color:#fff;min-width:40px;min-height:40px;border-radius:20px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.h-logout{min-height:40px}
 .h-refresh.spinning{animation:spin .7s linear infinite}
 
 /* ── ERREUR ── */
@@ -230,7 +269,7 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
       </div>
       <div style="display:flex;gap:6px">
         <button class="h-refresh" id="h-refresh" onclick="if(currentAuth)loadData(currentAuth,true)" title="Actualiser">↻</button>
-        <button class="h-logout" onclick="doLogout()">← Retour</button>
+        <button class="h-logout" onclick="doLogout()">Déconnexion</button>
       </div>
     </div>
     <div class="h-pills">
@@ -641,14 +680,17 @@ function renderDash(auth, donnees, items, config, challenges) {
     return `<div class="item-c ${projOk?'item-ok':'item-bad'}">
       <div class="ic-top">
         <span class="ic-icon">${r.icon}</span>
-        <span class="ic-pct-badge ${badgeClass(pProj)}">${pProj}%</span>
+        <div>
+          <span class="ic-pct-badge ${badgeClass(pProj)}">${projOk?'✓ ':''}${pProj}%</span>
+          <div class="ic-proj-cap">proj. fin mois</div>
+        </div>
       </div>
       <div class="ic-name">${it.nomItem}</div>
-      <div class="prog-bg"><div class="prog-fill ${fillClass(p)}" style="width:${Math.min(p,100)}%"></div></div>
+      <div class="prog-bg"><div class="prog-fill ${fillClass(pProj)}" style="width:${Math.min(pProj,100)}%"></div></div>
       <div class="ic-vals">
-        <div class="iv"><span class="iv-l">Réalisé</span><span class="iv-r">${fmtV(r.real)}</span></div>
+        <div class="iv"><span class="iv-l">Réalisé à date</span><span class="iv-r">${fmtV(r.real)}</span></div>
         <div class="iv"><span class="iv-l">Objectif</span><span class="iv-r" style="color:var(--muted)">${fmtV(objVal)}</span></div>
-        <div class="iv"><span class="iv-l">Proj. fin mois</span><span class="iv-r red">${fmtV(r.proj)}</span></div>
+        <div class="iv"><span class="iv-l">Proj. fin mois</span><span class="iv-r ${projOk?'green':'red'}">${fmtV(r.proj)}</span></div>
       </div>
     </div>`;
   }).join('');
@@ -794,22 +836,12 @@ function renderDash(auth, donnees, items, config, challenges) {
       <div class="st-txt"><h3>${stH}</h3><p>${stP}</p></div>
     </div>
 
+    <div class="dash-cols">
+    <div class="col-main">
+
     <!-- Commission hero -->
     <div class="comm-hero">
-      <div class="ch-grid">
-        <div class="ch-block">
-          <div class="chb-lbl">Marge réalisée</div>
-          <div class="chb-val">${fmt(marge)}<sup> €</sup></div>
-          <div class="chb-sub">J${jourOuvre} · palier ${Math.round(palierActuel(marge).pct*100)}%</div>
-        </div>
-        <div class="ch-block proj">
-          <div class="chb-lbl">Marge projetée</div>
-          <div class="chb-val">${fmt(margeProj)}<sup> €</sup></div>
-          <div class="chb-sub">Fin de mois · palier ${Math.round(palierP.pct*100)}%</div>
-        </div>
-      </div>
-
-      <!-- Commission projetée -->
+      <!-- Commission projetée (chiffre héros : ce que tu touches) -->
       <div class="comm-nette">
         <div class="cn-lbl">Commission projetée</div>
         <div class="cn-main">
@@ -820,6 +852,20 @@ function renderDash(auth, donnees, items, config, challenges) {
           ${malusExplain}
         </div>
         <div class="cn-sub" style="margin-top:4px">${fmt(commBrP)} € × ${100-malusPct}% (${5-ratés}/5 items) = <strong style="color:rgba(255,255,255,.7)">${fmt(commNetteP)} €</strong></div>
+      </div>
+
+      <!-- Marges (support) -->
+      <div class="ch-grid" style="margin-top:.75rem;margin-bottom:0">
+        <div class="ch-block">
+          <div class="chb-lbl">Marge réalisée</div>
+          <div class="chb-val">${fmt(marge)}<sup> €</sup></div>
+          <div class="chb-sub">J${jourOuvre} · palier ${Math.round(palierActuel(marge).pct*100)}%</div>
+        </div>
+        <div class="ch-block proj">
+          <div class="chb-lbl">Marge projetée</div>
+          <div class="chb-val">${fmt(margeProj)}<sup> €</sup></div>
+          <div class="chb-sub">Fin de mois · palier ${Math.round(palierP.pct*100)}%</div>
+        </div>
       </div>
 
       ${primeChallenge > 0 ? `
@@ -858,14 +904,20 @@ function renderDash(auth, donnees, items, config, challenges) {
       <div class="pres-bar"><div class="pres-fill" style="width:${Math.round(joursTrav/nbJours*100)}%"></div></div>
     </div>
 
+    </div><!-- /col-main -->
+    <div class="col-side">
     ${challHTML}
+    </div><!-- /col-side -->
+    </div><!-- /dash-cols -->
 
     <!-- 5 Items -->
+    <div class="items-block">
     <div class="sec">Les 5 items — impact sur commission</div>
     <div style="background:#FFF8E1;border:1px solid #FDE68A;border-radius:12px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:12px;color:var(--amber);font-weight:600;line-height:1.5">
       ⚠️ Chaque item non atteint = <strong>-20%</strong> de commission.<br>5/5 atteints = commission pleine (${Math.round(palierP.pct*100)}% de ta marge projetée)
     </div>
     <div class="items-grid">${itemsHTML || '<div style="grid-column:1/-1;text-align:center;color:var(--muted);padding:1rem;font-size:13px">Items en cours de chargement…</div>'}</div>
+    </div><!-- /items-block -->
 
     <div class="refresh"><div class="live"></div>Google Sheet · ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
   `;
