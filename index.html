@@ -709,7 +709,8 @@ function renderAdmin(donnees, items, config, challenges, connexions) {
   // ── Consultations par vendeur (clé = prénom normalisé loggé au login)
   const connByVendeur = {};
   connexions.forEach(c => {
-    const key = (c.Vendeur || c.vendeur || '').toString().toLowerCase().trim();
+    // ⚠️ parseCSV remappe l'en-tête "Vendeur" → "nom" via COL → lire c.nom en priorité
+    const key = (c.nom || c.Vendeur || c.vendeur || '').toString().toLowerCase().trim();
     if (!key) return;
     const ts = (c.Horodatage || c.horodatage || c.Date || '').toString();
     if (!connByVendeur[key]) connByVendeur[key] = { total:0, mois:0, last:'' };
