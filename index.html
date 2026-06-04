@@ -227,6 +227,36 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 .err-icon{font-size:40px;margin-bottom:1rem}
 .err-title{font-size:16px;font-weight:700;margin-bottom:.5rem}
 .err-msg{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:1.5rem}
+
+/* ── ADMIN ── */
+.adm-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem}
+@media(max-width:539px){.adm-cards{grid-template-columns:1fr;gap:.5rem}}
+.adm-card{background:var(--pro);border-radius:14px;padding:1rem}
+.adm-card .l{font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:5px}
+.adm-card .v{font-size:26px;font-weight:900;color:#fff;letter-spacing:-1px;line-height:1}
+.adm-card .v sup{font-size:13px;font-weight:400;opacity:.5}
+.adm-card .s{font-size:10px;color:rgba(255,255,255,.35);margin-top:5px}
+.adm-card.green{background:linear-gradient(135deg,#065F46,var(--green))}
+.adm-card.green .l{color:rgba(255,255,255,.6)}
+.adm-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:14px;background:#fff;margin-bottom:1rem}
+.adm-table{width:100%;border-collapse:collapse;font-size:12px;min-width:680px}
+.adm-table th{background:var(--off);text-align:right;padding:10px 12px;font-size:9px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.adm-table th:first-child,.adm-table td:first-child{text-align:left;position:sticky;left:0;z-index:1;background:#fff}
+.adm-table th:first-child{background:var(--off)}
+.adm-table td{padding:10px 12px;text-align:right;border-bottom:1px solid #F1F5F9;white-space:nowrap;color:var(--text)}
+.adm-table tbody tr:hover td{background:#FAFAFC}
+.adm-table tbody tr:hover td:first-child{background:#FAFAFC}
+.adm-table .name{font-weight:700;color:var(--text)}
+.adm-table .sub{font-size:10px;color:var(--muted);font-weight:400}
+.adm-table .tot{font-weight:900;color:var(--green-dk)}
+.adm-table .muted{color:var(--muted)}
+.adm-table .neg{color:var(--sfr);font-weight:700}
+.adm-table tfoot td{background:var(--pro);color:#fff;font-weight:800;border:none;font-size:12px}
+.adm-table tfoot td.tot{color:#86EFAC}
+.adm-badge{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:7px}
+.adm-never{background:#FEE2E2;color:var(--sfr-dark)}
+.adm-active{background:var(--green-bg);color:var(--green-dk)}
+.adm-note{font-size:11px;color:var(--muted);line-height:1.5;padding:.5rem .2rem 1rem}
 </style>
 </head>
 <body>
@@ -287,9 +317,15 @@ html,body{height:100%;background:var(--off);font-family:-apple-system,BlinkMacSy
 ════════════════════════════════════════ */
 const SHEET_ID = '1su6J88rzRF9hnZXwOsD8gkSDQpDl_XI1Ifjcoost6rY';
 
+// URL du Web App Apps Script qui enregistre les connexions dans l'onglet "Connexions".
+// Web App : projet "Log Connexions Garcia" (déployé 04/06/2026, accès public, exécute en tant que F. Garcia).
+const LOG_URL = 'https://script.google.com/macros/s/AKfycbwoBG5ehjdbOkKaP82-XxOHtann6yFVtX0fu7NJe34amykw2CTsHNc523ETjjT0xnsH/exec';
+
 // Login : prénom normalisé → { pin, nomSheet }
 // nomSheet = nom exact dans 3GWIN / Google Sheet
+// isAdmin:true → vue consolidée (rémunération de tous + consultations), accessible à ce seul compte
 const VENDEURS_AUTH = {
+  'admin':   { pin:'4972', isAdmin:true },
   'anais':   { pin:'7342', nomSheet:'ANAIS' },
   'axel':    { pin:'5819', nomSheet:'AXEL' },
   'chloe':   { pin:'2967', nomSheet:'CHLOE R' },
@@ -393,6 +429,70 @@ function commNette(commBr, itemsAtteints, totalItems) {
   return { nette: Math.round(commBr * pctRetenu / 100), malus: 100 - pctRetenu, ratés, pctRetenu };
 }
 
+// Calcul rému complet d'un vendeur (réutilisé par la vue admin) — même logique que renderDash
+function computeRemu(v, itemsDefs) {
+  const marge     = parseFloat(v.margeRealisee) || 0;
+  const jourOuvre = parseInt(v.jourOuvre) || 1;
+  const nbJours   = parseInt(v.nbJoursOuvres) || 22;
+  const joursTrav = parseInt(v.joursTravailles) || nbJours;
+  const nbMob     = parseFloat(v.nbMobiles) || 0;
+  const nbG3A     = parseFloat(v.nbGaranties) || 0;
+  const nbCyber   = parseFloat(v.nbCyber) || 0;
+  const nbAssu    = parseFloat(v.nbAssurances) || 0;
+  const nbMobAssu = parseFloat(v.nbMobilesAssu) || nbMob || 1;
+  const caAcc     = parseFloat(v.caAcc) || 0;
+  const txAssu    = nbMobAssu > 0 ? Math.round(nbAssu / nbMobAssu * 100) : 0;
+  const txG3A     = nbMob > 0 ? Math.round(nbG3A / nbMob * 100) : 0;
+  const accParMob = nbMob > 0 ? Math.round(caAcc / nbMob) : 0;
+  const coef      = jourOuvre > 0 && joursTrav > 0 ? joursTrav / jourOuvre : 1;
+  const margeProj = Math.round(marge * coef);
+  const realMap = {
+    'Mobiles':              { proj: Math.round(nbMob*coef) },
+    'Garantie 3ème Année':  { proj: txG3A },
+    'SFR Cyber':            { proj: Math.round(nbCyber*coef) },
+    "Taux d'Assurance":     { proj: txAssu },
+    "Taux d'Accessoire":    { proj: accParMob },
+  };
+  let itemsAtteints = 0;
+  const totalItems = itemsDefs.length || 5;
+  itemsDefs.forEach(it => {
+    const r = realMap[it.nomItem]; const obj = parseFloat(it.objectif) || 1;
+    if (r && r.proj >= obj) itemsAtteints++;
+  });
+  const commBrP = commBrute(margeProj);
+  const palierP = palierActuel(margeProj);
+  const { nette: commNetteP, malus: malusPct } = commNette(commBrP, itemsAtteints, totalItems);
+  return { marge, margeProj, palierPct: Math.round(palierP.pct*100), commBrP, commNetteP, malusPct, itemsAtteints, totalItems, joursTrav, nbJours };
+}
+
+// Prime challenge d'un vendeur pour un mois donné (20 €/jour gagné)
+function challPrimeFor(nomSheet, challenges, moisIdx, anneeIdx) {
+  const SPECIFIC = { 'HASSENE':'Amboise_Won', 'LOUANE':'Louane_Won', 'ROMAIN GP':'Groupe_Won' };
+  const specKey = SPECIFIC[nomSheet.toUpperCase()];
+  let won = 0;
+  challenges.forEach(d => {
+    const parts = String(d.Date || '').split('/');
+    if (parts.length !== 3) return;
+    if (parseInt(parts[1]) - 1 !== moisIdx || parseInt(parts[2]) !== anneeIdx) return;
+    if (specKey) {
+      if (String(d[specKey] || '').trim().toUpperCase() === 'OUI') won++;
+    } else {
+      const gagnes = (d.Top3_Gagnes || '').split(',').map(s => s.trim());
+      if (gagnes.some(n => n.toUpperCase() === nomSheet.toUpperCase())) won++;
+    }
+  });
+  return won * 20;
+}
+
+// Enregistre une connexion (fire-and-forget). Ignoré pour l'admin et si LOG_URL non configurée.
+function logConnexion(prenom, auth) {
+  if (!LOG_URL || (auth && auth.isAdmin)) return;
+  try {
+    const body = new URLSearchParams({ vendeur: prenom || '', nomSheet: (auth && auth.nomSheet) || '' });
+    fetch(LOG_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+  } catch(e) { /* silencieux : ne jamais bloquer le login */ }
+}
+
 /* ════════════════════════════════════════
    GOOGLE SHEET FETCH (CSV + retry)
 ════════════════════════════════════════ */
@@ -482,6 +582,7 @@ function tryLogin() {
     err.style.display = 'none';
     currentAuth = auth;
     document.getElementById('btn-login').disabled = true;
+    logConnexion(prenom, auth);
     showScreen('loading');
     loadData(auth);
   } else {
@@ -522,12 +623,14 @@ function loadData(auth, silent) {
     fetchSheet('Données_Commissions'),
     fetchSheet('Items_Mois'),
     fetchSheet('Config'),
-    fetchSheet('Historique_Challenges').catch(()=>[])
+    fetchSheet('Historique_Challenges').catch(()=>[]),
+    auth.isAdmin ? fetchSheet('Connexions').catch(()=>[]) : Promise.resolve([])
   ])
-    .then(([donnees, items, config, challenges]) => {
-      CACHED_DATA = { donnees, items, config, challenges };
+    .then(([donnees, items, config, challenges, connexions]) => {
+      CACHED_DATA = { donnees, items, config, challenges, connexions };
       LAST_REFRESH = Date.now();
-      renderDash(auth, donnees, items, config, challenges);
+      if (auth.isAdmin) renderAdmin(donnees, items, config, challenges, connexions);
+      else renderDash(auth, donnees, items, config, challenges);
     })
     .catch(e => {
       if (silent && CACHED_DATA) {
@@ -564,6 +667,143 @@ function fmt(n){ return Math.round(n).toLocaleString('fr-FR'); }
 function pct(real, obj){ return obj > 0 ? Math.min(Math.round(real/obj*100), 200) : (real>0?100:0); }
 function badgeClass(p){ return p>=100?'b-great':p>=75?'b-ok':p>=50?'b-warn':'b-bad'; }
 function fillClass(p){ return p>=100?'pf-great':p>=75?'pf-ok':p>=50?'pf-warn':'pf-bad'; }
+
+/* ════════════════════════════════════════
+   VUE ADMIN (rémunération de tous + consultations)
+════════════════════════════════════════ */
+function renderAdmin(donnees, items, config, challenges, connexions) {
+  challenges = challenges || [];
+  connexions = connexions || [];
+
+  // Config + mois en cours
+  const cfg = config[0] || {};
+  const moisFallback = (function(){const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];const d=new Date();return M[d.getMonth()]+' '+d.getFullYear();})();
+  const moisLabel = cfg.moisEnCours || moisFallback;
+  const majDate   = cfg.derniereMaj || '';
+  const MOIS_NAMES = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
+  const moisMatch = String(moisLabel).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').match(/(\w+)\s+(\d{4})/);
+  const moisIdx  = moisMatch ? MOIS_NAMES.indexOf(moisMatch[1]) : new Date().getMonth();
+  const anneeIdx = moisMatch ? parseInt(moisMatch[2])           : new Date().getFullYear();
+  const moisPrefix = anneeIdx + '-' + String(moisIdx+1).padStart(2,'0'); // "2026-06" pour filtrer les connexions du mois
+
+  const itemsDefs = items.filter(it => it.nomItem);
+
+  // ── Lignes rémunération (un vendeur = une ligne), triées par total décroissant
+  const rows = Object.entries(VENDEURS_AUTH)
+    .filter(([k, a]) => !a.isAdmin)
+    .map(([prenom, a]) => {
+      const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === a.nomSheet.toUpperCase());
+      if (!v) return { prenom, nomSheet: a.nomSheet, boutique:'—', missing:true, marge:0, margeProj:0, palierPct:0, commBrP:0, commNetteP:0, malusPct:0, itemsAtteints:0, totalItems:5, prime:0, total:0 };
+      const r = computeRemu(v, itemsDefs);
+      const prime = challPrimeFor(a.nomSheet, challenges, moisIdx, anneeIdx);
+      const boutique = BOUTIQUES[v.codeBoutique] || v.codeBoutique || '—';
+      return { prenom, nomSheet: a.nomSheet, boutique, ...r, prime, total: r.commNetteP + prime };
+    })
+    .sort((x, y) => y.total - x.total);
+
+  const totMarge = rows.reduce((s,r)=>s+r.marge,0);
+  const totComm  = rows.reduce((s,r)=>s+r.commNetteP,0);
+  const totPrime = rows.reduce((s,r)=>s+r.prime,0);
+  const totGlobal= rows.reduce((s,r)=>s+r.total,0);
+
+  // ── Consultations par vendeur (clé = prénom normalisé loggé au login)
+  const connByVendeur = {};
+  connexions.forEach(c => {
+    const key = (c.Vendeur || c.vendeur || '').toString().toLowerCase().trim();
+    if (!key) return;
+    const ts = (c.Horodatage || c.horodatage || c.Date || '').toString();
+    if (!connByVendeur[key]) connByVendeur[key] = { total:0, mois:0, last:'' };
+    connByVendeur[key].total++;
+    if (ts.indexOf(moisPrefix) === 0) connByVendeur[key].mois++;
+    if (ts > connByVendeur[key].last) connByVendeur[key].last = ts;
+  });
+
+  const fmtTs = ts => {
+    if (!ts) return '—';
+    const m = ts.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+    return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : ts;
+  };
+
+  // ── Header
+  document.getElementById('h-name').textContent = 'Admin';
+  document.getElementById('h-boutique').textContent = 'Vue consolidée · Groupe Garcia';
+  document.getElementById('h-mois').textContent = moisLabel;
+  document.getElementById('h-jour').textContent = rows.filter(r=>!r.missing).length + ' vendeurs';
+  document.getElementById('h-maj').textContent = majDate ? `MAJ ${majDate}` : 'En direct';
+
+  // ── Tableau rémunération
+  const remuRowsHTML = rows.map(r => r.missing ? `
+    <tr>
+      <td><span class="name">${r.prenom.charAt(0).toUpperCase()+r.prenom.slice(1)}</span><div class="sub">${r.nomSheet} · aucune donnée</div></td>
+      <td colspan="7" class="muted" style="text-align:center">— pas de données ce mois —</td>
+    </tr>` : `
+    <tr>
+      <td><span class="name">${r.prenom.charAt(0).toUpperCase()+r.prenom.slice(1)}</span><div class="sub">${r.boutique}</div></td>
+      <td>${fmt(r.marge)} €</td>
+      <td>${r.palierPct}%</td>
+      <td>${fmt(r.commBrP)} €</td>
+      <td class="${r.itemsAtteints===r.totalItems?'tot':''}">${r.itemsAtteints}/${r.totalItems}</td>
+      <td class="${r.malusPct>0?'neg':'muted'}">${r.malusPct>0?'-'+r.malusPct+'%':'0%'}</td>
+      <td>${r.prime>0?fmt(r.prime)+' €':'—'}</td>
+      <td class="tot">${fmt(r.total)} €</td>
+    </tr>`).join('');
+
+  // ── Tableau consultations
+  const consRowsHTML = rows.map(r => {
+    const c = connByVendeur[r.prenom.toLowerCase()] || { total:0, mois:0, last:'' };
+    const jamais = c.total === 0;
+    return `
+    <tr>
+      <td><span class="name">${r.prenom.charAt(0).toUpperCase()+r.prenom.slice(1)}</span><div class="sub">${r.boutique}</div></td>
+      <td>${jamais ? '<span class="adm-badge adm-never">jamais</span>' : '<span class="adm-badge adm-active">'+c.mois+'</span>'}</td>
+      <td class="muted">${c.total}</td>
+      <td class="muted">${fmtTs(c.last)}</td>
+    </tr>`;
+  }).join('');
+
+  const logActif = !!LOG_URL;
+
+  document.getElementById('dash-body').innerHTML = `
+    <div class="adm-cards">
+      <div class="adm-card"><div class="l">Marge totale (réel)</div><div class="v">${fmt(totMarge)}<sup> €</sup></div><div class="s">${rows.filter(r=>!r.missing).length} vendeurs</div></div>
+      <div class="adm-card"><div class="l">Commissions projetées</div><div class="v">${fmt(totComm)}<sup> €</sup></div><div class="s">nettes (après malus items)</div></div>
+      <div class="adm-card green"><div class="l">Total à verser (estimé)</div><div class="v">${fmt(totGlobal)}<sup> €</sup></div><div class="s">${fmt(totComm)} € comm. + ${fmt(totPrime)} € challenges</div></div>
+    </div>
+
+    <div class="sec">Rémunération du mois · ${moisLabel}</div>
+    <div class="adm-wrap">
+      <table class="adm-table">
+        <thead><tr>
+          <th>Vendeur</th><th>Marge (réel)</th><th>Palier</th><th>Comm. brute</th>
+          <th>Items</th><th>Malus</th><th>Challenge</th><th>Total</th>
+        </tr></thead>
+        <tbody>${remuRowsHTML}</tbody>
+        <tfoot><tr>
+          <td>Total groupe</td><td>${fmt(totMarge)} €</td><td></td><td></td><td></td><td></td>
+          <td>${fmt(totPrime)} €</td><td class="tot">${fmt(totGlobal)} €</td>
+        </tr></tfoot>
+      </table>
+    </div>
+    <div class="adm-note">Commission projetée fin de mois (paliers de marge × % retenu selon items atteints). Palier calculé sur la marge projetée.</div>
+
+    <div class="sec">Consultations du dashboard</div>
+    <div class="adm-wrap">
+      <table class="adm-table">
+        <thead><tr><th>Vendeur</th><th>Connexions (${moisLabel.split(' ')[0]})</th><th>Total</th><th>Dernière</th></tr></thead>
+        <tbody>${consRowsHTML}</tbody>
+      </table>
+    </div>
+    <div class="adm-note">
+      ${logActif
+        ? 'Une ligne est enregistrée à chaque connexion vendeur. « jamais » = le vendeur n\'a jamais ouvert son dashboard.'
+        : '⚠️ Le suivi des connexions n\'est pas encore actif : déployer <strong>Log_Connexions.gs</strong> en Web App puis coller son URL dans <strong>LOG_URL</strong> en haut du fichier. En attendant, ce tableau reste vide.'}
+    </div>
+
+    <div class="refresh"><div class="live"></div>Google Sheet · ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+  `;
+
+  showScreen('dash');
+}
 
 function renderDash(auth, donnees, items, config, challenges) {
   challenges = challenges || [];
