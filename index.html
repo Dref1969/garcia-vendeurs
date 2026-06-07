@@ -361,6 +361,28 @@ const PALIERS = [
   {min:9000, max:Infinity, pct:0.10},
 ];
 
+// ═══ RPV : payplan responsable point de vente (commission sur la MARGE MAGASIN) ═══
+// nomSheet du RPV -> code boutique dont il pilote la marge
+const RPV_STORES = { 'LOUANE': 'CHOLET' };
+// Barème RPV : % de la marge magasin par palier (taux-par-palier, flat). <18000 € -> 0 %
+const PALIERS_RPV = [
+  {min:18000, pct:0.010},
+  {min:20000, pct:0.012},
+  {min:22000, pct:0.024},
+  {min:23000, pct:0.026},
+  {min:24000, pct:0.028},
+  {min:26000, pct:0.030},
+];
+function commRpv(margeMag){
+  let pct=0;
+  for(const p of PALIERS_RPV){ if(margeMag>=p.min) pct=p.pct; }
+  return { pct, comm: Math.round(margeMag*pct) };
+}
+function prochainPalierRpv(margeMag){
+  for(const p of PALIERS_RPV){ if(margeMag < p.min) return { reste: Math.round(p.min-margeMag), palier:p }; }
+  return null;
+}
+
 // Colonnes Google Sheet → noms courts (noms exacts vérifiés sur le Sheet)
 const COL = {
   // Données_Commissions
@@ -430,7 +452,20 @@ function commNette(commBr, itemsAtteints, totalItems) {
 }
 
 // Calcul rému complet d'un vendeur (réutilisé par la vue admin) — même logique que renderDash
-function computeRemu(v, itemsDefs) {
+// Objectif proratisé par vendeur (onglet Objectifs_Indiv) — matching par mot-clé, robuste au renommage d'item
+function objIndivVal(nomItem, oi){
+  if(!oi) return 0;
+  if(/mobile/i.test(nomItem)) return parseFloat(oi.ObjMobiles)||0;
+  if(/garantie|g3a|3.me/i.test(nomItem)) return parseFloat(oi.ObjG3A)||0;
+  if(/cyber/i.test(nomItem)) return parseFloat(oi.ObjCyber)||0;
+  if(/assu/i.test(nomItem)) return parseFloat(oi.ObjAssu)||0;
+  if(/access/i.test(nomItem)) return parseFloat(oi.ObjAccess)||0;
+  return 0;
+}
+// Objectif effectif d'un item pour un vendeur : proratisé si présent, sinon objectif plein Items_Mois
+function objFor(it, oiRow){ const o=objIndivVal(it.nomItem, oiRow); return (o>0?o:parseFloat(it.objectif))||1; }
+
+function computeRemu(v, itemsDefs, objIndiv) {
   const marge     = parseFloat(v.margeRealisee) || 0;
   const jourOuvre = parseInt(v.jourOuvre) || 1;
   const nbJours   = parseInt(v.nbJoursOuvres) || 22;
@@ -450,13 +485,14 @@ function computeRemu(v, itemsDefs) {
     'Mobiles':              { proj: Math.round(nbMob*coef) },
     'Garantie 3ème Année':  { proj: txG3A },
     'SFR Cyber':            { proj: Math.round(nbCyber*coef) },
-    "Taux d'Assurance":     { proj: txAssu },
+    "Qté Assu":             { proj: Math.round(nbAssu*coef) },
     "Taux d'Accessoire":    { proj: accParMob },
   };
   let itemsAtteints = 0;
   const totalItems = itemsDefs.length || 5;
+  const oiRow = (objIndiv||[]).find(o => (o.nom||'').toUpperCase().trim() === (v.nom||'').toUpperCase().trim());
   itemsDefs.forEach(it => {
-    const r = realMap[it.nomItem]; const obj = parseFloat(it.objectif) || 1;
+    const r = realMap[it.nomItem]; const obj = objFor(it, oiRow);
     if (r && r.proj >= obj) itemsAtteints++;
   });
   const commBrP = commBrute(margeProj);
@@ -624,13 +660,14 @@ function loadData(auth, silent) {
     fetchSheet('Items_Mois'),
     fetchSheet('Config'),
     fetchSheet('Historique_Challenges').catch(()=>[]),
-    auth.isAdmin ? fetchSheet('Connexions').catch(()=>[]) : Promise.resolve([])
+    auth.isAdmin ? fetchSheet('Connexions').catch(()=>[]) : Promise.resolve([]),
+    fetchSheet('Objectifs_Indiv').catch(()=>[])
   ])
-    .then(([donnees, items, config, challenges, connexions]) => {
-      CACHED_DATA = { donnees, items, config, challenges, connexions };
+    .then(([donnees, items, config, challenges, connexions, objIndiv]) => {
+      CACHED_DATA = { donnees, items, config, challenges, connexions, objIndiv };
       LAST_REFRESH = Date.now();
-      if (auth.isAdmin) renderAdmin(donnees, items, config, challenges, connexions);
-      else renderDash(auth, donnees, items, config, challenges);
+      if (auth.isAdmin) renderAdmin(donnees, items, config, challenges, connexions, objIndiv);
+      else renderDash(auth, donnees, items, config, challenges, objIndiv);
     })
     .catch(e => {
       if (silent && CACHED_DATA) {
@@ -671,7 +708,7 @@ function fillClass(p){ return p>=100?'pf-great':p>=75?'pf-ok':p>=50?'pf-warn':'p
 /* ════════════════════════════════════════
    VUE ADMIN (rémunération de tous + consultations)
 ════════════════════════════════════════ */
-function renderAdmin(donnees, items, config, challenges, connexions) {
+function renderAdmin(donnees, items, config, challenges, connexions, objIndiv) {
   challenges = challenges || [];
   connexions = connexions || [];
 
@@ -694,7 +731,17 @@ function renderAdmin(donnees, items, config, challenges, connexions) {
     .map(([prenom, a]) => {
       const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === a.nomSheet.toUpperCase());
       if (!v) return { prenom, nomSheet: a.nomSheet, boutique:'—', missing:true, marge:0, margeProj:0, palierPct:0, commBrP:0, commNetteP:0, malusPct:0, itemsAtteints:0, totalItems:5, prime:0, total:0 };
-      const r = computeRemu(v, itemsDefs);
+      // RPV : commission sur la marge magasin (payplan RPV)
+      if (RPV_STORES[a.nomSheet]) {
+        const store = RPV_STORES[a.nomSheet];
+        const vd = donnees.filter(d => d.nom && (d.codeBoutique||'').toUpperCase().trim() === store);
+        const mr = vd.reduce((s,d)=> s + (parseFloat(d.margeRealisee)||0), 0);
+        const ref = vd[0] || v, jo = parseInt(ref.jourOuvre)||1, nj = parseInt(ref.nbJoursOuvres)||22;
+        const mp = Math.round(mr * (jo>0 ? nj/jo : 1));
+        const { pct, comm } = commRpv(mp);
+        return { prenom, nomSheet: a.nomSheet, boutique: 'RPV '+(BOUTIQUES[v.codeBoutique]||v.codeBoutique||''), marge: mr, margeProj: mp, palierPct: Math.round(pct*100), commBrP: comm, commNetteP: comm, malusPct: 0, itemsAtteints: 0, totalItems: 0, prime: 0, total: comm, isRpv: true };
+      }
+      const r = computeRemu(v, itemsDefs, objIndiv);
       const prime = challPrimeFor(a.nomSheet, challenges, moisIdx, anneeIdx);
       const boutique = BOUTIQUES[v.codeBoutique] || v.codeBoutique || '—';
       return { prenom, nomSheet: a.nomSheet, boutique, ...r, prime, total: r.commNetteP + prime };
@@ -743,8 +790,8 @@ function renderAdmin(donnees, items, config, challenges, connexions) {
       <td>${fmt(r.marge)} €</td>
       <td>${r.palierPct}%</td>
       <td>${fmt(r.commBrP)} €</td>
-      <td class="${r.itemsAtteints===r.totalItems?'tot':''}">${r.itemsAtteints}/${r.totalItems}</td>
-      <td class="${r.malusPct>0?'neg':'muted'}">${r.malusPct>0?'-'+r.malusPct+'%':'0%'}</td>
+      <td class="${r.isRpv?'muted':(r.itemsAtteints===r.totalItems?'tot':'')}">${r.isRpv?'RPV':r.itemsAtteints+'/'+r.totalItems}</td>
+      <td class="muted">${r.isRpv?'—':(r.malusPct>0?'-'+r.malusPct+'%':'0%')}</td>
       <td>${r.prime>0?fmt(r.prime)+' €':'—'}</td>
       <td class="tot">${fmt(r.total)} €</td>
     </tr>`).join('');
@@ -806,10 +853,139 @@ function renderAdmin(donnees, items, config, challenges, connexions) {
   showScreen('dash');
 }
 
-function renderDash(auth, donnees, items, config, challenges) {
+// ═══ VUE RPV (responsable point de vente) — commission sur la marge magasin ═══
+function renderRPV(auth, donnees, config) {
+  const nomSheet = auth.nomSheet;
+  const store    = RPV_STORES[nomSheet];
+  const boutique = BOUTIQUES[store] || store;
+  const cfg = config[0] || {};
+  const moisFallback = (function(){const M=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];const d=new Date();return M[d.getMonth()]+' '+d.getFullYear();})();
+  const moisLabel = cfg.moisEnCours || moisFallback;
+  const majDate   = cfg.derniereMaj || '';
+
+  // Marge magasin = somme des marges des vendeurs de la boutique
+  const vendeurs  = donnees.filter(d => d.nom && (d.codeBoutique||'').toUpperCase().trim() === store);
+  const margeReal = vendeurs.reduce((s,d)=> s + (parseFloat(d.margeRealisee)||0), 0);
+  const ref       = vendeurs[0] || {};
+  const jourOuvre = parseInt(ref.jourOuvre) || 1;
+  const nbJours   = parseInt(ref.nbJoursOuvres) || 22;
+  const coef      = jourOuvre > 0 ? nbJours / jourOuvre : 1;
+  const margeProj = Math.round(margeReal * coef);
+  const { pct, comm } = commRpv(margeProj);
+  const next = prochainPalierRpv(margeProj);
+
+  // Statut
+  let stClass, stIcon, stH, stP;
+  if (comm === 0) { stClass='st-warn'; stIcon='⚡'; stH='Sous le 1er palier'; stP=`Encore ${fmt(next?next.reste:0)} € de marge magasin pour démarrer la commission`; }
+  else if (next)  { stClass='st-ok';   stIcon='✅'; stH='Commission RPV en cours'; stP='Continue à pousser la marge magasin'; }
+  else            { stClass='st-great';stIcon='🏆'; stH='Palier maximum atteint'; stP='Excellent pilotage magasin !'; }
+
+  // Header
+  document.getElementById('h-name').textContent = nomSheet.charAt(0)+nomSheet.slice(1).toLowerCase();
+  document.getElementById('h-boutique').textContent = 'RPV · ' + boutique;
+  document.getElementById('h-mois').textContent = moisLabel;
+  document.getElementById('h-jour').textContent = `J${jourOuvre} / ${nbJours}`;
+  document.getElementById('h-maj').textContent = majDate ? `MAJ ${majDate}` : 'En direct';
+
+  // Palier actif (le plus haut atteint)
+  let activeMin = null;
+  PALIERS_RPV.forEach(p => { if (margeProj >= p.min) activeMin = p.min; });
+
+  const gridHTML = PALIERS_RPV.map(p => {
+    const on = p.min === activeMin;
+    return `<tr style="${on?'background:var(--green-bg);font-weight:700':''}">
+      <td style="padding:8px 10px">${fmt(p.min)} €</td>
+      <td style="padding:8px 10px;text-align:center">${(p.pct*100).toFixed(2).replace('.',',')} %</td>
+      <td style="padding:8px 10px;text-align:right">${fmt(Math.round(p.min*p.pct))} €</td>
+      <td style="padding:8px 10px;text-align:center">${on?'◀ ici':''}</td>
+    </tr>`;
+  }).join('');
+
+  const vendeursHTML = vendeurs
+    .sort((a,b)=>(parseFloat(b.margeRealisee)||0)-(parseFloat(a.margeRealisee)||0))
+    .map(d => `<div class="iv" style="padding:8px 0;border-bottom:1px solid var(--border)">
+        <span class="iv-l">${d.nom}${(d.nom||'').toUpperCase()===nomSheet.toUpperCase()?' <span style="color:var(--muted)">(vous)</span>':''}</span>
+        <span class="iv-r">${fmt(parseFloat(d.margeRealisee)||0)} €</span>
+      </div>`).join('');
+
+  document.getElementById('dash-body').innerHTML = `
+    <div class="statut ${stClass}">
+      <span class="st-icon">${stIcon}</span>
+      <div class="st-txt"><h3>${stH}</h3><p>${stP}</p></div>
+    </div>
+
+    <div class="comm-hero">
+      <div class="comm-nette">
+        <div class="cn-lbl">Commission RPV projetée — ${boutique}</div>
+        <div class="cn-main">
+          <div class="cn-val">${fmt(comm)}<sup> €</sup></div>
+          <span class="cn-malus" style="background:rgba(255,255,255,.12)">${(pct*100).toFixed(2).replace('.',',')} % de la marge magasin</span>
+        </div>
+        <div class="cn-sub" style="margin-top:8px">${fmt(margeProj)} € (marge magasin projetée) × ${(pct*100).toFixed(2).replace('.',',')} %</div>
+      </div>
+      <div class="ch-grid" style="margin-top:.75rem;margin-bottom:0">
+        <div class="ch-block">
+          <div class="chb-lbl">Marge magasin réalisée</div>
+          <div class="chb-val">${fmt(margeReal)}<sup> €</sup></div>
+          <div class="chb-sub">J${jourOuvre} · ${vendeurs.length} vendeurs</div>
+        </div>
+        <div class="ch-block proj">
+          <div class="chb-lbl">Marge magasin projetée</div>
+          <div class="chb-val">${fmt(margeProj)}<sup> €</sup></div>
+          <div class="chb-sub">Fin de mois</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="palier-card">
+      <div class="pc-top">
+        <div>
+          <div class="pc-tl">Palier de marge magasin</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">Commission = % de la marge magasin</div>
+        </div>
+        <div class="pc-pct">${(pct*100).toFixed(2).replace('.',',')} %</div>
+      </div>
+      ${next
+        ? `<div class="palier-next"><div class="pn-txt">Encore <strong>${fmt(next.reste)} €</strong> de marge magasin pour le palier <strong>${(next.palier.pct*100).toFixed(2).replace('.',',')} %</strong> (${fmt(next.palier.min)} €)</div></div>`
+        : `<div class="palier-next"><div class="pn-txt" style="color:var(--green-dk);font-weight:700">🏆 Palier maximum atteint !</div></div>`}
+    </div>
+
+    <div class="sec">Barème RPV — marge magasin</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead><tr style="background:var(--off);font-size:11px;color:var(--muted);text-transform:uppercase">
+          <th style="padding:8px 10px;text-align:left">Marge magasin</th>
+          <th style="padding:8px 10px;text-align:center">Taux</th>
+          <th style="padding:8px 10px;text-align:right">Exemple</th>
+          <th style="padding:8px 10px"></th>
+        </tr></thead>
+        <tbody>${gridHTML}</tbody>
+      </table>
+    </div>
+
+    <div class="sec">Vendeurs du magasin</div>
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:.5rem 1rem">${vendeursHTML}</div>
+
+    <div class="sec">Primes & malus collectifs (rappel payplan)</div>
+    <div style="background:#FFF8E1;border:1px solid #FDE68A;border-radius:12px;padding:.75rem 1rem;font-size:12px;line-height:1.7;color:var(--amber-dk)">
+      • Critizr magasin : <strong>-100 €</strong> si note &lt; 4,5<br>
+      • Google : <strong>+100 €/trimestre</strong> si note ≥ 4,7<br>
+      • Funnel (prise en charge) : <strong>-25 €</strong> si &lt; 40 %<br>
+      • Comportement : <strong>-50 €</strong> (propreté, merch, relances, stock, 3CX &lt; 50 %, managérial)<br>
+      <span style="color:var(--muted)">Non calculés ici (données magasin hors périmètre de cette appli).</span>
+    </div>
+
+    <div class="refresh"><div class="live"></div>Google Sheet · ${new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+  `;
+  showScreen('dash');
+}
+
+function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   challenges = challenges || [];
   // Trouver le vendeur dans le Sheet
   const nomSheet = auth.nomSheet;
+  // RPV : payplan magasin → vue dédiée
+  if (RPV_STORES[nomSheet]) { renderRPV(auth, donnees, config); return; }
   const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === nomSheet.toUpperCase());
 
   if (!v) {
@@ -854,13 +1030,15 @@ function renderDash(auth, donnees, items, config, challenges) {
 
   // ── ITEMS : réalisé & projeté ──
   const itemsDefs = items.filter(it => it.nomItem);
+  // Objectifs proratisés par présence pour CE vendeur (sinon objectif plein Items_Mois)
+  const oiRow = (objIndiv||[]).find(o => (o.nom||'').toUpperCase().trim() === nomSheet.toUpperCase());
 
   // Map réel + projeté par item
   const realMap = {
     'Mobiles':              { real: nbMob,     proj: Math.round(nbMob*coef),     icon:'📱', unite:'unités' },
     'Garantie 3ème Année':  { real: txG3A,     proj: txG3A,                      icon:'🛡️', unite:'%' },
     'SFR Cyber':            { real: nbCyber,   proj: Math.round(nbCyber*coef),   icon:'🔒', unite:'unités' },
-    "Taux d'Assurance":     { real: txAssu,    proj: txAssu,                     icon:'⚡', unite:'%' },
+    "Qté Assu":             { real: nbAssu,    proj: Math.round(nbAssu*coef),    icon:'⚡', unite:'unités' },
     "Taux d'Accessoire":    { real: accParMob, proj: accParMob,                  icon:'🎧', unite:'€/mob' },
   };
 
@@ -870,7 +1048,7 @@ function renderDash(auth, donnees, items, config, challenges) {
 
   itemsDefs.forEach(it => {
     const r = realMap[it.nomItem];
-    const obj = parseFloat(it.objectif) || 1;
+    const obj = objFor(it, oiRow);
     // Malus basé sur la PROJECTION fin de mois
     if (r && r.proj >= obj) itemsAtteints++;
   });
@@ -890,7 +1068,7 @@ function renderDash(auth, donnees, items, config, challenges) {
   // Statut global
   const avgPct = itemsDefs.length > 0
     ? Math.round(itemsDefs.map(it => {
-        const r = realMap[it.nomItem]; const obj = parseFloat(it.objectif)||1;
+        const r = realMap[it.nomItem]; const obj = objFor(it, oiRow);
         return r ? pct(r.real, obj) : 0;
       }).reduce((a,b)=>a+b,0) / itemsDefs.length)
     : 50;
@@ -911,7 +1089,7 @@ function renderDash(auth, donnees, items, config, challenges) {
   // Items HTML
   const itemsHTML = itemsDefs.map(it => {
     const r = realMap[it.nomItem] || { real:0, proj:0, icon:'📊', unite:'' };
-    const objVal = parseFloat(it.objectif) || 1;
+    const objVal = objFor(it, oiRow);
     const p     = pct(r.real, objVal);
     const pProj = pct(r.proj, objVal);
     const projOk = r.proj >= objVal;
