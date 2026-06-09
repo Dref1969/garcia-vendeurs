@@ -1,0 +1,65 @@
+{
+ "maj": "2026-06-09 22:06",
+ "date": "20260609",
+ "nb_factures": 38,
+ "meilleure_vente": {
+  "fac": "200029313",
+  "vendeur": "LOUANE",
+  "agence": "ANGERS",
+  "articles": [
+   {
+    "desig": "PRESTATION - SERVICE",
+    "marge": 6.67
+   },
+   {
+    "desig": "Extension Garantie 3ème année - 0 à 500€",
+    "marge": 50.0
+   },
+   {
+    "desig": "Film de découpe HD - NOVIANT | Activez la garantie à vie sur https://noviant-technologies.com/pages/activation-garantie-a-vie",
+    "marge": 56.12
+   },
+   {
+    "desig": "Chargeur USB C 30W Power Delivery GaN Blanc + Garantie à vie - Origine France Garantie Force Power Lite",
+    "marge": 10.83
+   },
+   {
+    "desig": "SAMSUNG GALAXY A17 5G 128GO BLEU SFR",
+    "marge": 92.0
+   }
+  ],
+  "total": 215.62
+ },
+ "top": [
+  {
+   "vendeur": "LOUANE",
+   "agence": "ANGERS",
+   "total": 215.62,
+   "nb": 5
+  },
+  {
+   "vendeur": "HASSENE",
+   "agence": "AMBOISE",
+   "total": 205.0,
+   "nb": 1
+  },
+  {
+   "vendeur": "ANAIS",
+   "agence": "CHOLET",
+   "total": 168.8,
+   "nb": 5
+  },
+  {
+   "vendeur": "MEHDY",
+   "agence": "CHATEAUDUN",
+   "total": 160.0,
+   "nb": 1
+  },
+  {
+   "vendeur": "ANAIS",
+   "agence": "CHOLET",
+   "total": 160.0,
+   "nb": 1
+  }
+ ]
+}
