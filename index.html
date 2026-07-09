@@ -480,7 +480,7 @@ function computeRemu(v, itemsDefs, objIndiv) {
   const txAssu    = nbMobAssu > 0 ? Math.round(nbAssu / nbMobAssu * 100) : 0;
   const txG3A     = nbMob > 0 ? Math.round(nbG3A / nbMob * 100) : 0;
   const accParMob = nbMob > 0 ? Math.round(caAcc / nbMob) : 0;
-  const coef      = jourOuvre > 0 && joursTrav > 0 ? joursTrav / jourOuvre : 1;
+  const coef      = jourOuvre > 0 ? nbJours / jourOuvre : 1;
   const margeProj = Math.round(marge * coef);
   const realMap = {
     'Mobiles':              { proj: Math.round(nbMob*coef) },
@@ -1025,8 +1025,8 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   const txG3A     = nbMob > 0 ? Math.round((nbG3A / nbMob) * 100) : 0;
   const accParMob = nbMob > 0 ? Math.round(caAcc / nbMob) : 0;
 
-  // Coefficient de projection (basé sur jours passés vs jours présence)
-  const coef = jourOuvre > 0 && joursTrav > 0 ? joursTrav / jourOuvre : 1;
+  // Coefficient de projection (marge réalisée × jours ouvrés du mois / jours ouvrés écoulés)
+  const coef = jourOuvre > 0 ? nbJours / jourOuvre : 1;
 
   // ── MARGE PROJETÉE ──
   const margeProj = Math.round(marge * coef);
