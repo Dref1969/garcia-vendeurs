@@ -466,6 +466,27 @@ function objIndivVal(nomItem, oi){
 // Objectif effectif d'un item pour un vendeur : proratisé si présent, sinon objectif plein Items_Mois
 function objFor(it, oiRow){ const o=objIndivVal(it.nomItem, oiRow); return (o>0?o:parseFloat(it.objectif))||1; }
 
+// Agrège les lignes d'un vendeur présent sur plusieurs boutiques le même mois (renfort) en une
+// seule ligne : marge + items sommés (sinon donnees.find n'en prenait qu'une → marge réelle fausse).
+// Boutique de référence = celle où la marge est la plus forte ; jours/mois identiques entre lignes.
+function aggVendeur(donnees, nomSheet){
+  const key = String(nomSheet||'').toUpperCase().trim();
+  const rows = donnees.filter(d => d.nom && d.nom.toUpperCase().trim() === key);
+  if (rows.length <= 1) return rows[0] || null;
+  const base = rows.slice().sort((a,b)=>(parseFloat(b.margeRealisee)||0)-(parseFloat(a.margeRealisee)||0))[0];
+  const sum = k => rows.reduce((s,d)=> s + (parseFloat(d[k])||0), 0);
+  return Object.assign({}, base, {
+    margeRealisee: sum('margeRealisee'),
+    nbMobiles:     sum('nbMobiles'),
+    nbGaranties:   sum('nbGaranties'),
+    nbCyber:       sum('nbCyber'),
+    nbAssurances:  sum('nbAssurances'),
+    nbMobilesAssu: sum('nbMobilesAssu'),
+    caAcc:         sum('caAcc'),
+    multiBoutiques: rows.map(d=>d.codeBoutique).filter(Boolean)
+  });
+}
+
 function computeRemu(v, itemsDefs, objIndiv) {
   const marge     = parseFloat(v.margeRealisee) || 0;
   const jourOuvre = parseInt(v.jourOuvre) || 1;
@@ -732,7 +753,7 @@ function renderAdmin(donnees, items, config, challenges, connexions, objIndiv) {
   const rows = Object.entries(VENDEURS_AUTH)
     .filter(([k, a]) => !a.isAdmin)
     .map(([prenom, a]) => {
-      const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === a.nomSheet.toUpperCase());
+      const v = aggVendeur(donnees, a.nomSheet);
       if (!v) return { prenom, nomSheet: a.nomSheet, boutique:'—', missing:true, marge:0, margeProj:0, palierPct:0, commBrP:0, commNetteP:0, malusPct:0, itemsAtteints:0, totalItems:5, prime:0, total:0 };
       // RPV : commission sur la marge magasin (payplan RPV)
       if (RPV_STORES[a.nomSheet]) {
@@ -742,7 +763,7 @@ function renderAdmin(donnees, items, config, challenges, connexions, objIndiv) {
         const ref = vd[0] || v, jo = parseInt(ref.jourOuvre)||1, nj = parseInt(ref.nbJoursOuvres)||22;
         const mp = Math.round(mr * (jo>0 ? nj/jo : 1));
         const { pct, comm } = commRpv(mp);
-        return { prenom, nomSheet: a.nomSheet, boutique: 'RPV '+(BOUTIQUES[v.codeBoutique]||v.codeBoutique||''), marge: mr, margeProj: mp, palierPct: Math.round(pct*100), commBrP: comm, commNetteP: comm, malusPct: 0, itemsAtteints: 0, totalItems: 0, prime: 0, total: comm, isRpv: true };
+        return { prenom, nomSheet: a.nomSheet, boutique: 'RPV '+(BOUTIQUES[store]||store||''), marge: mr, margeProj: mp, palierPct: Math.round(pct*100), commBrP: comm, commNetteP: comm, malusPct: 0, itemsAtteints: 0, totalItems: 0, prime: 0, total: comm, isRpv: true };
       }
       const r = computeRemu(v, itemsDefs, objIndiv);
       const prime = challPrimeFor(a.nomSheet, challenges, moisIdx, anneeIdx);
@@ -989,7 +1010,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   const nomSheet = auth.nomSheet;
   // RPV : payplan magasin → vue dédiée
   if (RPV_STORES[nomSheet]) { renderRPV(auth, donnees, config); return; }
-  const v = donnees.find(d => d.nom && d.nom.toUpperCase().trim() === nomSheet.toUpperCase());
+  const v = aggVendeur(donnees, nomSheet);
 
   if (!v) {
     showScreen('dash');
