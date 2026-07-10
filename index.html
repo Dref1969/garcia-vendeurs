@@ -358,8 +358,9 @@ const PALIERS = [
 ];
 
 // ── BOOST ×2 : prime challenge du jour à 40 € au lieu de 20 € sur ces dates UNIQUEMENT ──
-// ⚠️ TEMPORAIRE — retirer '26/06/2026' après le 26/06 (doit rester aligné sur BOOST_DATES du Dashboard Jour manager).
-const BOOST_DATES = ['28/05/2026','29/05/2026','30/05/2026','26/06/2026'];
+// ⚠️ Doit rester ALIGNÉ sur BOOST_DATES du Dashboard Jour manager (ne PAS retirer les dates passées :
+// elles servent au recalcul des primes historiques, ex. 30/06 MEHDY/EMILIE 40 €).
+const BOOST_DATES = ['28/05/2026','29/05/2026','30/05/2026','26/06/2026','30/06/2026'];
 function primeJour(dateStr){ return BOOST_DATES.includes(String(dateStr||'').trim()) ? 40 : 20; }
 
 // ═══ RPV : payplan responsable point de vente (commission sur la MARGE MAGASIN) ═══
@@ -1148,7 +1149,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   const SPECIFIC_CHALLENGE = {
     'HASSENE':   { key:'Amboise_Won', title:'Challenge Amboise',  sub:'Marge boutique Amboise ≥ 700 €/jour → 20 €/jour',  failLabel:'✗ < 700 €' },
     'LOUANE':    { key:'Louane_Won',  title:'Challenge Cholet',   sub:'Marge boutique Cholet ≥ 1 000 €/jour → 20 €/jour', failLabel:'✗ < 1 000 €' },
-    'ROMAIN GP': { key:'Groupe_Won',  title:'Challenge Groupe',   sub:'Marge groupe ≥ 4 000 €/jour → 20 €/jour',          failLabel:'✗ < 4 000 €' }
+    'ROMAIN GP': { key:'Groupe_Won',  title:'Challenge Groupe',   sub:'Marge groupe ≥ 3 500 €/jour → 20 €/jour',          failLabel:'✗ < 3 500 €' }
   };
   const specConfig = SPECIFIC_CHALLENGE[nomSheet.toUpperCase()];
 
