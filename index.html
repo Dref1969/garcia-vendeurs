@@ -362,6 +362,16 @@ const PALIERS = [
 // elles servent au recalcul des primes historiques, ex. 30/06 MEHDY/EMILIE 40 €).
 const BOOST_DATES = ['28/05/2026','29/05/2026','30/05/2026','26/06/2026','30/06/2026'];
 function primeJour(dateStr){ return BOOST_DATES.includes(String(dateStr||'').trim()) ? 40 : 20; }
+// Jours à barème spécial (annonce CDV) — aligné sur JOURS_SPECIAUX du Dashboard Jour manager :
+// 1er du Top 3 = top1 €, 2e/3e = topn €, challenges managers = mgr €.
+const JOURS_SPECIAUX = {'17/07/2026':{top1:40,topn:20,mgr:40}};
+function primeJourPour(d, nomSheet, isMgr){
+  const spec = JOURS_SPECIAUX[String(d.Date||'').trim()];
+  if (!spec) return primeJour(d.Date);
+  if (isMgr) return spec.mgr;
+  const gagnes = String(d.Top3_Gagnes || '').split(',').map(s=>s.trim()).filter(Boolean);
+  return (gagnes[0]||'').toUpperCase() === String(nomSheet||'').toUpperCase() ? spec.top1 : spec.topn;
+}
 
 // ═══ RPV : payplan responsable point de vente (commission sur la MARGE MAGASIN) ═══
 // nomSheet du RPV -> code boutique dont il pilote la marge
@@ -540,7 +550,7 @@ function challPrimeFor(nomSheet, challenges, moisIdx, anneeIdx) {
       const gagnes = (d.Top3_Gagnes || '').split(',').map(s => s.trim());
       won = gagnes.some(n => n.toUpperCase() === nomSheet.toUpperCase());
     }
-    if (won) prime += primeJour(d.Date);
+    if (won) prime += primeJourPour(d, nomSheet, !!specKey);
   });
   return prime;
 }
@@ -1190,7 +1200,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
       filtered.forEach(d => {
         const w = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
         hist.push({ date: d.Date || '', won: w });
-        if (w) { won++; prime += primeJour(d.Date); }
+        if (w) { won++; prime += primeJourPour(d, nomSheet, true); }
       });
     } else {
       filtered.forEach(d => {
@@ -1202,7 +1212,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
           const rank = top3.findIndex(n => n.toUpperCase() === nomSheet.toUpperCase()) + 1;
           hist.push({ date: d.Date || '', rank, won: hasWon });
         }
-        if (hasWon) { won++; prime += primeJour(d.Date); }
+        if (hasWon) { won++; prime += primeJourPour(d, nomSheet, false); }
       });
     }
     return { won, total: filtered.length, hist, prime };
@@ -1217,7 +1227,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   // Jour de BOOST ×2 (prime 40 € au lieu de 20 €) — note dynamique, disparaît avec le retrait de BOOST_DATES
   const _todayJ = (function(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();})();
   const boostToday = BOOST_DATES.includes(_todayJ);
-  const challSub   = (specConfig ? specConfig.sub : 'Top 3 marge jour + 400 € min → 20 €/jour') + (boostToday ? ' · 🔥 ×2 AUJOURD\'HUI = 40 €' : '');
+  const challSub   = (specConfig ? specConfig.sub : 'Top 3 marge jour + 400 € min → 20 €/jour') + (boostToday ? ' · 🔥 ×2 AUJOURD\'HUI = 40 €' : '') + (JOURS_SPECIAUX[_todayJ] ? (specConfig ? ' · 🔥 AUJOURD\'HUI ×2 = 40 €' : ' · 🔥 AUJOURD\'HUI : 1er du Top 3 = 40 €') : '');
 
   // Rend uniquement la partie body (stats + bar + hist + badge) — utilisée à l'init et au changement de mois
   function renderChallBody(stats) {
