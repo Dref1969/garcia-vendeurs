@@ -360,7 +360,7 @@ const PALIERS = [
 // ── BOOST ×2 : prime challenge du jour à 40 € au lieu de 20 € sur ces dates UNIQUEMENT ──
 // ⚠️ Doit rester ALIGNÉ sur BOOST_DATES du Dashboard Jour manager (ne PAS retirer les dates passées :
 // elles servent au recalcul des primes historiques, ex. 30/06 MEHDY/EMILIE 40 €).
-const BOOST_DATES = ['28/05/2026','29/05/2026','30/05/2026','26/06/2026','30/06/2026'];
+const BOOST_DATES = ['28/05/2026','29/05/2026','30/05/2026','26/06/2026','30/06/2026','23/07/2026','28/07/2026','29/07/2026','30/07/2026','31/07/2026'];
 function primeJour(dateStr){ return BOOST_DATES.includes(String(dateStr||'').trim()) ? 40 : 20; }
 // Jours à barème spécial (annonce CDV) — aligné sur JOURS_SPECIAUX du Dashboard Jour manager :
 // 1er du Top 3 = top1 €, 2e/3e = topn €, challenges managers = mgr €.
