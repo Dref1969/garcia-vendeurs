@@ -464,18 +464,22 @@ function commNette(commBr, itemsAtteints, totalItems) {
 }
 
 // Calcul rému complet d'un vendeur (réutilisé par la vue admin) — même logique que renderDash
+// Le Sheet est en locale FR : un objectif proratisé sort en "22,5" dans l'export CSV.
+// parseFloat("22,5") = 22 → le vendeur voyait 22 là où le dashboard manager (pNum, qui
+// gère la virgule) voyait 22,5. numFR aligne les deux.
+function numFR(v){ return parseFloat(String(v==null?'':v).replace(/\s/g,'').replace(',','.'))||0; }
 // Objectif proratisé par vendeur (onglet Objectifs_Indiv) — matching par mot-clé, robuste au renommage d'item
 function objIndivVal(nomItem, oi){
   if(!oi) return 0;
-  if(/mobile/i.test(nomItem)) return parseFloat(oi.ObjMobiles)||0;
-  if(/garantie|g3a|3.me/i.test(nomItem)) return parseFloat(oi.ObjG3A)||0;
-  if(/cyber/i.test(nomItem)) return parseFloat(oi.ObjCyber)||0;
-  if(/assu/i.test(nomItem)) return parseFloat(oi.ObjAssu)||0;
-  if(/access/i.test(nomItem)) return parseFloat(oi.ObjAccess)||0;
+  if(/mobile/i.test(nomItem)) return numFR(oi.ObjMobiles);
+  if(/garantie|g3a|3.me/i.test(nomItem)) return numFR(oi.ObjG3A);
+  if(/cyber/i.test(nomItem)) return numFR(oi.ObjCyber);
+  if(/assu/i.test(nomItem)) return numFR(oi.ObjAssu);
+  if(/access/i.test(nomItem)) return numFR(oi.ObjAccess);
   return 0;
 }
 // Objectif effectif d'un item pour un vendeur : proratisé si présent, sinon objectif plein Items_Mois
-function objFor(it, oiRow){ const o=objIndivVal(it.nomItem, oiRow); return (o>0?o:parseFloat(it.objectif))||1; }
+function objFor(it, oiRow){ const o=objIndivVal(it.nomItem, oiRow); return (o>0?o:numFR(it.objectif))||1; }
 
 // Agrège les lignes d'un vendeur présent sur plusieurs boutiques le même mois (renfort) en une
 // seule ligne : marge + items sommés (sinon donnees.find n'en prenait qu'une → marge réelle fausse).
