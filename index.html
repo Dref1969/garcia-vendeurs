@@ -534,10 +534,22 @@ function computeRemu(v, itemsDefs, objIndiv) {
   return { marge, margeProj, palierPct: Math.round(palierP.pct*100), commBrP, commNetteP, malusPct, itemsAtteints, totalItems, joursTrav, nbJours };
 }
 
+// Challenge spécifique selon le MOIS affiché : depuis septembre 2026 (moisIdx 8), Hassène
+// et Louane jouent le Top 3 vendeur (fin des challenges boutique Amboise/Cholet, décision
+// Frédéric 01/09/2026) ; Romain reste sur le challenge groupe. Les mois antérieurs à
+// septembre 2026 gardent les anciennes règles (historique consultable via le sélecteur).
+function challSpecKeyFor(nomSheet, moisIdx, anneeIdx) {
+  const n = String(nomSheet||'').toUpperCase();
+  if (n === 'ROMAIN GP') return 'Groupe_Won';
+  const avantSept2026 = anneeIdx < 2026 || (anneeIdx === 2026 && moisIdx < 8);
+  if (avantSept2026 && n === 'HASSENE') return 'Amboise_Won';
+  if (avantSept2026 && n === 'LOUANE')  return 'Louane_Won';
+  return null;
+}
+
 // Prime challenge d'un vendeur pour un mois donné (20 €/jour gagné, 40 € sur les jours BOOST)
 function challPrimeFor(nomSheet, challenges, moisIdx, anneeIdx) {
-  const SPECIFIC = { 'HASSENE':'Amboise_Won', 'LOUANE':'Louane_Won', 'ROMAIN GP':'Groupe_Won' };
-  const specKey = SPECIFIC[nomSheet.toUpperCase()];
+  const specKey = challSpecKeyFor(nomSheet, moisIdx, anneeIdx);
   let prime = 0;
   challenges.forEach(d => {
     const parts = String(d.Date || '').split('/');
@@ -1155,13 +1167,15 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
     : `<span style="color:var(--sfr)">⚠️ ${ratés} item${ratés>1?'s':''} non atteint${ratés>1?'s':''} → malus de ${malusPct}%</span>`;
 
   // ── CHALLENGES ──
-  // Challenges spécifiques manageurs/CDV : prime 20€/jour si seuil atteint
+  // Challenges spécifiques manageurs/CDV : prime 20€/jour si seuil atteint.
+  // La config dépend du MOIS affiché (cf. challSpecKeyFor) : Hassène/Louane sont en
+  // challenge boutique jusqu'en août 2026 inclus, puis Top 3 vendeur depuis septembre 2026.
   const SPECIFIC_CHALLENGE = {
-    'HASSENE':   { key:'Amboise_Won', title:'Challenge Amboise',  sub:'Marge boutique Amboise ≥ 700 €/jour → 20 €/jour',  failLabel:'✗ < 700 €' },
-    'LOUANE':    { key:'Louane_Won',  title:'Challenge Cholet',   sub:'Marge boutique Cholet ≥ 1 000 €/jour → 20 €/jour', failLabel:'✗ < 1 000 €' },
-    'ROMAIN GP': { key:'Groupe_Won',  title:'Challenge Groupe',   sub:'Marge groupe ≥ 3 200 €/jour → 20 €/jour',          failLabel:'✗ < 3 200 €' }
+    'Amboise_Won': { key:'Amboise_Won', title:'Challenge Amboise',  sub:'Marge boutique Amboise ≥ 700 €/jour → 20 €/jour',  failLabel:'✗ < 700 €' },
+    'Louane_Won':  { key:'Louane_Won',  title:'Challenge Cholet',   sub:'Marge boutique Cholet ≥ 1 000 €/jour → 20 €/jour', failLabel:'✗ < 1 000 €' },
+    'Groupe_Won':  { key:'Groupe_Won',  title:'Challenge Groupe',   sub:'Marge groupe ≥ 3 200 €/jour → 20 €/jour',          failLabel:'✗ < 3 200 €' }
   };
-  const specConfig = SPECIFIC_CHALLENGE[nomSheet.toUpperCase()];
+  const specConfigFor = (mArg, yArg) => SPECIFIC_CHALLENGE[challSpecKeyFor(nomSheet, mArg, yArg)] || null;
 
   // Parsing mois en cours (format "mai 2026")
   const MOIS_NAMES = ['janvier','fevrier','mars','avril','mai','juin','juillet','aout','septembre','octobre','novembre','decembre'];
@@ -1188,6 +1202,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
 
   // Calcul stats pour un mois donné
   function challStatsFor(mArg, yArg) {
+    const spec = specConfigFor(mArg, yArg); // config du mois AFFICHÉ (pas du mois courant)
     const filtered = challenges.filter(d => {
       const parts = String(d.Date || '').split('/');
       if (parts.length !== 3) return false;
@@ -1196,9 +1211,9 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
     let won = 0;
     let prime = 0;
     const hist = [];
-    if (specConfig) {
+    if (spec) {
       filtered.forEach(d => {
-        const w = String(d[specConfig.key] || '').trim().toUpperCase() === 'OUI';
+        const w = String(d[spec.key] || '').trim().toUpperCase() === 'OUI';
         hist.push({ date: d.Date || '', won: w });
         if (w) { won++; prime += primeJourPour(d, nomSheet, true); }
       });
@@ -1215,7 +1230,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
         if (hasWon) { won++; prime += primeJourPour(d, nomSheet, false); }
       });
     }
-    return { won, total: filtered.length, hist, prime };
+    return { won, total: filtered.length, hist, prime, spec };
   }
 
   // Stats mois en cours (pour le Total estimé qui reste basé sur ce mois)
@@ -1223,6 +1238,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   const primeChallenge = currentStats.prime;
   const totalEstime = commNetteP + primeChallenge;
 
+  const specConfig = specConfigFor(moisIdx, anneeIdx); // config du mois affiché à l'init
   const challTitle = specConfig ? specConfig.title : 'Challenge Vendeur';
   // Jour de BOOST ×2 (prime 40 € au lieu de 20 €) — note dynamique, disparaît avec le retrait de BOOST_DATES
   const _todayJ = (function(){const d=new Date();return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();})();
@@ -1231,6 +1247,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
 
   // Rend uniquement la partie body (stats + bar + hist + badge) — utilisée à l'init et au changement de mois
   function renderChallBody(stats) {
+    const specConfig = stats.spec; // config du mois affiché (peut différer du mois courant)
     const pct = stats.total > 0 ? Math.round(stats.won / stats.total * 100) : 0;
     return `
       <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
@@ -1268,6 +1285,13 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   // Stash les helpers pour le handler onChange (attaché après innerHTML)
   window.__challStatsFor   = challStatsFor;
   window.__challRenderBody = renderChallBody;
+  // Titre/sous-titre de la carte selon le mois choisi (Hassène/Louane : challenge boutique
+  // avant sept. 2026, Top 3 vendeur ensuite → l'en-tête doit suivre le sélecteur de mois)
+  window.__challHdrFor = function(mArg, yArg){
+    const sc = specConfigFor(mArg, yArg);
+    return { title: sc ? sc.title : 'Challenge Vendeur',
+             sub:   sc ? sc.sub   : 'Top 3 marge jour + 400 € min → 20 €/jour' };
+  };
 
   // Challenge HTML — affiché pour tous (Top 3 standard ou challenge spécifique)
   const challHTML = `
@@ -1388,6 +1412,13 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
       const stats = window.__challStatsFor(parts[0], parts[1]);
       const body = document.getElementById('chall-body-inner');
       if (body) body.innerHTML = window.__challRenderBody(stats);
+      // MAJ de l'en-tête : le type de challenge peut changer selon le mois (Hassène/Louane)
+      if (window.__challHdrFor) {
+        const hdr = window.__challHdrFor(parts[0], parts[1]);
+        const tEl = document.querySelector('.chall-title'), sEl = document.querySelector('.chall-sub');
+        if (tEl) tEl.textContent = hdr.title;
+        if (sEl) sEl.textContent = hdr.sub;
+      }
     });
   }
 
