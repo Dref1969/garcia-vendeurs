@@ -399,7 +399,7 @@ const COL = {
   'Marge':'margeRealisee','Mobiles':'nbMobiles',
   'G3A':'nbGaranties','Cyber':'nbCyber',
   'Assurance':'nbAssurances','MobAssu':'nbMobilesAssu',
-  'CAccessoires':'caAcc','JourOuvre':'jourOuvre',
+  'CAccessoires':'caAcc','Box':'nbBox','JourOuvre':'jourOuvre',
   'JoursOuvresTotal':'nbJoursOuvres','JoursTravailles':'joursTravailles',
   // Items_Mois
   "Nom de l'item":'nomItem','Objectif':'objectif','Unité':'unite',
@@ -510,9 +510,10 @@ function computeRemu(v, itemsDefs, objIndiv) {
   const nbAssu    = parseFloat(v.nbAssurances) || 0;
   const nbMobAssu = parseFloat(v.nbMobilesAssu) || nbMob || 1;
   const caAcc     = parseFloat(v.caAcc) || 0;
+  const nbBox     = parseFloat(v.nbBox) || 0;   // une box est un acte : elle compte au dénominateur
   const txAssu    = nbMobAssu > 0 ? Math.round(nbAssu / nbMobAssu * 100) : 0;
   const txG3A     = nbMob > 0 ? Math.round(nbG3A / nbMob * 100) : 0;
-  const accParMob = nbMob > 0 ? Math.round(caAcc / nbMob) : 0;
+  const accParMob = (nbMob + nbBox) > 0 ? Math.round(caAcc / (nbMob + nbBox)) : 0;   // par ACTE (mobile + box)
   const coef      = jourOuvre > 0 ? nbJours / jourOuvre : 1;
   const margeProj = Math.round(marge * coef);
   const realMap = {
@@ -1066,9 +1067,10 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
   const nbAssu    = parseFloat(v.nbAssurances) || 0;
   const nbMobAssu = parseFloat(v.nbMobilesAssu) || nbMob || 1;
   const caAcc     = parseFloat(v.caAcc) || 0;
+  const nbBox     = parseFloat(v.nbBox) || 0;   // une box est un acte : elle compte au dénominateur
   const txAssu    = nbMobAssu > 0 ? Math.round((nbAssu / nbMobAssu) * 100) : 0;
   const txG3A     = nbMob > 0 ? Math.round((nbG3A / nbMob) * 100) : 0;
-  const accParMob = nbMob > 0 ? Math.round(caAcc / nbMob) : 0;
+  const accParMob = (nbMob + nbBox) > 0 ? Math.round(caAcc / (nbMob + nbBox)) : 0;   // par ACTE (mobile + box)
 
   // Coefficient de projection (marge réalisée × jours ouvrés du mois / jours ouvrés écoulés)
   const coef = jourOuvre > 0 ? nbJours / jourOuvre : 1;
@@ -1087,7 +1089,7 @@ function renderDash(auth, donnees, items, config, challenges, objIndiv) {
     'Garantie 3ème Année':  { real: txG3A,     proj: txG3A,                      icon:'🛡️', unite:'%' },
     'SFR Cyber':            { real: nbCyber,   proj: Math.round(nbCyber*coef),   icon:'🔒', unite:'unités' },
     "Qté Assu":             { real: nbAssu,    proj: Math.round(nbAssu*coef),    icon:'⚡', unite:'unités' },
-    "Taux d'Accessoire":    { real: accParMob, proj: accParMob,                  icon:'🎧', unite:'€/mob' },
+    "Taux d'Accessoire":    { real: accParMob, proj: accParMob,                  icon:'🎧', unite:'€/vente' },
   };
 
   // Items atteints (réalisé ≥ objectif)
